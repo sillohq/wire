@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sillo-wire"
+version = "0.1.0"
+description = "Rooms, presence and fan-out for Sillo WebSockets — bounded queues, replayable backlog, no global state."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+authors = [
+    {name = "Chidebele Dunamis", email = "techwithdunamix@gmail.com"}
+]
+keywords = ["sillo", "websocket", "realtime", "pubsub", "presence", "broadcast", "asgi"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed",
+]
+# Only the socket surface is used — WebSocketContext and the logger. No ORM,
+# no cache, no extras.
+dependencies = ["sillo-framework>=0.3"]
+
+[project.urls]
+Homepage = "https://sillo.build"
+Documentation = "https://docs.sillo.build/v1.0/packages/wire/"
+Source = "https://github.com/sillohq/wire"
