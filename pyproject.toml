@@ -33,3 +33,12 @@ dependencies = ["sillo-framework>=0.3"]
 Homepage = "https://sillo.build"
 Documentation = "https://docs.sillo.build/v1.0/packages/wire/"
 Source = "https://github.com/sillohq/wire"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.11"]
+
+# The parent `sillo/` package directory belongs to sillo-framework; this wheel
+# ships only the subpackage into it, which is what makes `from sillo.wire
+# import Hub` work without an import hook and without a namespace package.
+[tool.hatch.build.targets.wheel]
+only-include = ["sillo/wire"]
