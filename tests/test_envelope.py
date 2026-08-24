@@ -30,3 +30,24 @@ class TestEnvelope:
             assert type(exc).__name__ in {"FrozenInstanceError", "AttributeError"}
         else:  # pragma: no cover - dataclass is frozen
             raise AssertionError("expected the envelope to be immutable")
+
+    def test_room_defaults_to_empty(self):
+        assert Envelope("a").room == ""
+
+    def test_size_of_bytes_is_exact(self):
+        assert Envelope(b"1234567").size() == 7
+        assert Envelope(bytearray(b"12345")).size() == 5
+        assert Envelope(memoryview(b"123")).size() == 3
+
+    def test_size_of_text_counts_encoded_bytes(self):
+        """Not characters — a cap in bytes has to be measured in bytes."""
+        assert Envelope("abc").size() == 3
+        assert Envelope("é").size() == 2
+
+    def test_size_of_anything_else_is_estimated(self):
+        assert Envelope({"a": 1}).size() > 0
+        assert Envelope(None).size() == 4
+
+    def test_undecodable_text_still_sizes(self):
+        """Surrogates would raise on a strict encode; the cap must not."""
+        assert Envelope("\ud800").size() > 0
