@@ -27,3 +27,23 @@ class Encoding(enum.Enum):
     JSON = "json"
     TEXT = "text"
     BYTES = "bytes"
+
+
+@dataclass(frozen=True, slots=True)
+class Envelope:
+    """One message, addressed to a room.
+
+    Frozen because an envelope handed to a fan-out is shared by every peer in
+    the room; a mutable one would let a slow peer observe an edit made after it
+    was queued.
+    """
+
+    payload: typing.Any
+    room: str = ""
+    seq: int = field(default_factory=lambda: next(_counter))
+    #: Factories rather than plain defaults: a plain default is evaluated once,
+    #: at class definition, which would stamp every envelope in a backlog with
+    #: the same import-time timestamp.
+    sent_at: datetime = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
