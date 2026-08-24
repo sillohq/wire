@@ -33,3 +33,10 @@ class Overflow(enum.Enum):
     Right when order matters more than recency and the client will reconcile
     from the backlog later.
     """
+
+    CLOSE = "close"
+    """Disconnect the peer.
+
+    Right when a client that cannot keep up is a client that is broken, and
+    letting it reconnect is cheaper than reasoning about what it missed.
+    """
