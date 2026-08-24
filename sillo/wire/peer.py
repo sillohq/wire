@@ -89,3 +89,45 @@ class Peer:
         self._queue: asyncio.Queue[Envelope] = asyncio.Queue(maxsize=capacity)
         self._writer: asyncio.Task[None] | None = None
         self._closed = False
+
+    # ── lifecycle ────────────────────────────────────────────────────────
+
+    @property
+    def closed(self) -> bool:
+        """Whether this peer has been closed, by either side."""
+        return self._closed
+
+    @property
+    def pending(self) -> int:
+        """Messages queued and not yet written."""
+        return self._queue.qsize()
+
+    def start(self) -> None:
+        """Begin draining the queue.
+
+        Idempotent, so a hub that joins the same peer to several rooms does not
+        start several writers for it.
+        """
+        if self._writer is None and not self._closed:
+            self._writer = asyncio.create_task(self._drain())
+
+    async def close(self) -> None:
+        """Stop the writer and close the socket.
+
+        Safe to call twice, and safe to call on a socket that is already gone —
+        a disconnect racing a cleanup is the normal case, not an error.
+        """
+        if self._closed:
+            return
+        self._closed = True
+
+        if self._writer is not None:
+            self._writer.cancel()
+            with contextlib.suppress(BaseException):
+                await self._writer
+            self._writer = None
+
+        # A socket that is already gone is the normal case here, not an error:
+        # close() is what runs when the client hung up.
+        with contextlib.suppress(Exception):
+            await self.socket.close()
