@@ -51,3 +51,23 @@ class TestEnvelope:
     def test_undecodable_text_still_sizes(self):
         """Surrogates would raise on a strict encode; the cap must not."""
         assert Envelope("\ud800").size() > 0
+
+
+class TestEncoding:
+    def test_the_three_wire_formats(self):
+        assert {e.value for e in Encoding} == {"json", "text", "bytes"}
+
+
+class TestDeliveryReport:
+    def test_attempted_is_the_sum(self):
+        report = DeliveryReport(delivered=3, dropped=2, failed=1)
+        assert report.attempted == 6
+
+    def test_it_is_truthy_when_anyone_got_it(self):
+        assert DeliveryReport(delivered=1)
+        assert not DeliveryReport(dropped=5, failed=5)
+        assert not DeliveryReport()
+
+    def test_it_defaults_to_empty(self):
+        report = DeliveryReport()
+        assert (report.delivered, report.dropped, report.failed) == (0, 0, 0)
