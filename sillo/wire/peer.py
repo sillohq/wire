@@ -168,3 +168,43 @@ class Peer:
             self._queue.get_nowait()
         self._queue.put_nowait(envelope)
         return True
+
+    async def send(self, payload: typing.Any) -> None:
+        """Write *payload* to the socket now, bypassing the queue.
+
+        For replies to that one peer, where the caller wants the failure. A
+        broadcast uses :meth:`offer` instead.
+
+        Raises:
+            PeerGone: If the peer is closed, or the socket raises.
+        """
+        if self._closed:
+            raise PeerGone(f"peer {self.id} is closed")
+        try:
+            await self._write(payload)
+        except Exception as exc:
+            raise PeerGone(f"peer {self.id} went away") from exc
+
+    async def _write(self, payload: typing.Any) -> None:
+        """Put one payload on the wire in this peer's encoding."""
+        if self.encoding is Encoding.JSON:
+            await self.socket.send_json(payload)
+        elif self.encoding is Encoding.TEXT:
+            await self.socket.send_text(payload)
+        else:
+            await self.socket.send_bytes(payload)
+        self.last_sent_at = time.monotonic()
+
+    async def _drain(self) -> None:
+        """Write queued envelopes until cancelled or the socket fails."""
+        while True:
+            envelope = await self._queue.get()
+            if self._closed:
+                break
+            try:
+                await self._write(envelope.payload)
+            except Exception:
+                # The socket is gone. Stop the writer rather than spinning on a
+                # dead connection; the hub notices through `closed` and evicts.
+                self._closed = True
+                break
