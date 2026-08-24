@@ -47,3 +47,18 @@ class Envelope:
     sent_at: datetime = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
+
+    def size(self) -> int:
+        """Roughly what this costs to hold, in bytes.
+
+        Used by the backlog to enforce its cap. Exact for the encodings that
+        have a length and estimated otherwise, which is the right trade for a
+        limit whose purpose is to stop unbounded growth rather than to account
+        precisely.
+        """
+        payload = self.payload
+        if isinstance(payload, (bytes, bytearray, memoryview)):
+            return len(payload)
+        if isinstance(payload, str):
+            return len(payload.encode("utf-8", "replace"))
+        return len(repr(payload).encode("utf-8", "replace"))
