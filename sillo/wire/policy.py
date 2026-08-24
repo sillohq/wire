@@ -26,3 +26,10 @@ class Overflow(enum.Enum):
     Right for state that supersedes itself — a price tick, a cursor position, a
     progress percentage. The client sees a gap but always sees *current*.
     """
+
+    DROP_NEWEST = "drop_newest"
+    """Discard the message being sent and keep the queue as it is.
+
+    Right when order matters more than recency and the client will reconcile
+    from the backlog later.
+    """
