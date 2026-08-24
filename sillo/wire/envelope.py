@@ -62,3 +62,31 @@ class Envelope:
         if isinstance(payload, str):
             return len(payload.encode("utf-8", "replace"))
         return len(repr(payload).encode("utf-8", "replace"))
+
+
+@dataclass(frozen=True, slots=True)
+class DeliveryReport:
+    """What a fan-out actually did.
+
+    A broadcast that returns nothing is a broadcast you cannot operate: there
+    is no way to tell "nobody was listening" from "everybody was, and half of
+    them failed".
+    """
+
+    delivered: int = 0
+    """Peers the message was written to."""
+
+    dropped: int = 0
+    """Peers whose queue was full, resolved by their overflow policy."""
+
+    failed: int = 0
+    """Peers whose socket raised while being written to."""
+
+    @property
+    def attempted(self) -> int:
+        """Every peer the room contained when the fan-out began."""
+        return self.delivered + self.dropped + self.failed
+
+    def __bool__(self) -> bool:
+        """True when at least one peer received the message."""
+        return self.delivered > 0
