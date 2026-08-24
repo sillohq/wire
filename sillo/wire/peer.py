@@ -131,3 +131,40 @@ class Peer:
         # close() is what runs when the client hung up.
         with contextlib.suppress(Exception):
             await self.socket.close()
+
+    # ── sending ──────────────────────────────────────────────────────────
+
+    def offer(self, envelope: Envelope) -> bool:
+        """Queue *envelope* without blocking. Returns whether it was accepted.
+
+        This is what a fan-out calls. It never awaits and never raises, so one
+        peer cannot affect the delivery of any other.
+        """
+        if self._closed:
+            return False
+
+        try:
+            self._queue.put_nowait(envelope)
+            return True
+        except asyncio.QueueFull:
+            return self._resolve_overflow(envelope)
+
+    def _resolve_overflow(self, envelope: Envelope) -> bool:
+        """Apply :attr:`overflow` to a message that did not fit."""
+        if self.overflow is Overflow.DROP_NEWEST:
+            return False
+
+        if self.overflow is Overflow.CLOSE:
+            # Closing is asynchronous, and this path must not await. Marking
+            # it closed stops further offers immediately; the writer task sees
+            # the flag and shuts the socket down.
+            self._closed = True
+            return False
+
+        # DROP_OLDEST: make room by discarding the head, then retry once. The
+        # retry cannot fail — nothing else consumes from this queue between the
+        # two calls, because neither of them awaits.
+        with contextlib.suppress(asyncio.QueueEmpty):
+            self._queue.get_nowait()
+        self._queue.put_nowait(envelope)
+        return True
