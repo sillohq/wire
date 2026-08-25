@@ -208,3 +208,24 @@ class Peer:
                 # dead connection; the hub notices through `closed` and evicts.
                 self._closed = True
                 break
+
+    # ── health ───────────────────────────────────────────────────────────
+
+    def is_idle(self, *, now: float | None = None) -> bool:
+        """Whether nothing has been written for longer than :attr:`idle_timeout`.
+
+        Distinct from a lifetime TTL on purpose: a connection that is being
+        used should not be evicted for having existed a long time, and one that
+        has gone quiet should be, however recently it connected.
+        """
+        if self.idle_timeout is None:
+            return False
+        moment = time.monotonic() if now is None else now
+        return (moment - self.last_sent_at) > self.idle_timeout
+
+    def __repr__(self) -> str:
+        state = "closed" if self._closed else f"pending={self.pending}"
+        return (
+            f"<Peer {str(self.id)[:8]} {self.encoding.value} "
+            f"identity={self.identity!r} {state}>"
+        )
