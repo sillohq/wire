@@ -116,3 +116,30 @@ class TestQueueing:
         await peer.close()
         peer.start()
         assert peer._writer is None
+
+
+class TestOverflow:
+    async def test_drop_oldest_keeps_the_newest(self):
+        socket = FakeSocket()
+        peer = Peer(socket, capacity=2, overflow=Overflow.DROP_OLDEST)
+        for n in range(4):
+            assert peer.offer(Envelope(n))
+        peer.start()
+        await drain(peer)
+        assert socket.sent == [2, 3]
+
+    async def test_drop_newest_keeps_the_oldest(self):
+        socket = FakeSocket()
+        peer = Peer(socket, capacity=2, overflow=Overflow.DROP_NEWEST)
+        assert peer.offer(Envelope(0))
+        assert peer.offer(Envelope(1))
+        assert peer.offer(Envelope(2)) is False
+        peer.start()
+        await drain(peer)
+        assert socket.sent == [0, 1]
+
+    async def test_close_disconnects_the_slow_peer(self):
+        peer = Peer(FakeSocket(), capacity=1, overflow=Overflow.CLOSE)
+        assert peer.offer(Envelope(0))
+        assert peer.offer(Envelope(1)) is False
+        assert peer.closed
