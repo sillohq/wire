@@ -55,3 +55,23 @@ class TestEncodings:
         peer = Peer(socket, encoding=encoding)
         await peer.send(payload)
         assert socket.sent == [payload]
+
+
+class TestDirectSend:
+    async def test_send_raises_when_the_socket_is_gone(self):
+        peer = Peer(FakeSocket(fail=True))
+        with pytest.raises(PeerGone):
+            await peer.send("x")
+
+    async def test_send_raises_once_closed(self):
+        peer = Peer(FakeSocket())
+        await peer.close()
+        with pytest.raises(PeerGone, match="closed"):
+            await peer.send("x")
+
+    async def test_send_updates_the_idle_clock(self):
+        peer = Peer(FakeSocket())
+        before = peer.last_sent_at
+        await asyncio.sleep(0.01)
+        await peer.send("x")
+        assert peer.last_sent_at > before
