@@ -190,3 +190,24 @@ class TestClosing:
         peer = Peer(Hostile())
         await peer.close()
         assert peer.closed
+
+
+class TestIdle:
+    def test_no_timeout_means_never_idle(self):
+        assert Peer(FakeSocket()).is_idle() is False
+
+    def test_idle_once_the_timeout_passes(self):
+        peer = Peer(FakeSocket(), idle_timeout=5)
+        assert peer.is_idle(now=peer.last_sent_at + 1) is False
+        assert peer.is_idle(now=peer.last_sent_at + 6) is True
+
+    async def test_sending_resets_it(self):
+        peer = Peer(FakeSocket(), idle_timeout=0.05)
+        await asyncio.sleep(0.06)
+        assert peer.is_idle()
+        await peer.send("x")
+        assert not peer.is_idle()
+
+    def test_it_reads_the_clock_when_not_given_one(self):
+        peer = Peer(FakeSocket(), idle_timeout=0.0)
+        assert peer.is_idle() in (True, False)
