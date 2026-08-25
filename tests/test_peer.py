@@ -143,3 +143,27 @@ class TestOverflow:
         assert peer.offer(Envelope(0))
         assert peer.offer(Envelope(1)) is False
         assert peer.closed
+
+
+class TestFailureHandling:
+    async def test_a_writer_stops_when_the_socket_dies(self):
+        peer = Peer(FakeSocket(fail=True))
+        peer.start()
+        peer.offer(Envelope("x"))
+        for _ in range(20):
+            await asyncio.sleep(0)
+            if peer.closed:
+                break
+        assert peer.closed
+
+    async def test_the_writer_exits_if_closed_mid_wait(self):
+        """Closing while the writer is parked on an empty queue must end it,
+        not leave it holding a socket that is already shut."""
+        peer = Peer(FakeSocket())
+        peer.start()
+        await asyncio.sleep(0)
+        peer._closed = True
+        peer._queue.put_nowait(Envelope("ignored"))
+        await asyncio.sleep(0)
+        await peer.close()
+        assert peer.closed
