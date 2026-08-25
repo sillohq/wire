@@ -167,3 +167,26 @@ class TestFailureHandling:
         await asyncio.sleep(0)
         await peer.close()
         assert peer.closed
+
+
+class TestClosing:
+    async def test_close_shuts_the_socket(self):
+        socket = FakeSocket()
+        peer = Peer(socket)
+        await peer.close()
+        assert socket.closed and peer.closed
+
+    async def test_close_is_idempotent(self):
+        peer = Peer(FakeSocket())
+        await peer.close()
+        await peer.close()
+        assert peer.closed
+
+    async def test_close_tolerates_a_socket_that_raises(self):
+        class Hostile(FakeSocket):
+            async def close(self, code: int = 1000):
+                raise RuntimeError("already gone")
+
+        peer = Peer(Hostile())
+        await peer.close()
+        assert peer.closed
