@@ -75,3 +75,44 @@ class TestDirectSend:
         await asyncio.sleep(0.01)
         await peer.send("x")
         assert peer.last_sent_at > before
+
+
+class TestQueueing:
+    async def test_offer_does_not_block(self):
+        """The whole point: enqueueing is synchronous and cannot wait on a
+        socket, however slow that socket is."""
+        peer = Peer(FakeSocket(delay=10), capacity=4)
+        started = time.perf_counter()
+        for _ in range(4):
+            assert peer.offer(Envelope("x"))
+        assert time.perf_counter() - started < 0.05
+
+    async def test_a_started_peer_drains_to_the_socket(self):
+        socket = FakeSocket()
+        peer = Peer(socket)
+        peer.start()
+        peer.offer(Envelope("one"))
+        peer.offer(Envelope("two"))
+        await drain(peer)
+        assert socket.sent == ["one", "two"]
+
+    async def test_start_is_idempotent(self):
+        """A hub joins a peer to several rooms and must not spawn a writer
+        per room."""
+        peer = Peer(FakeSocket())
+        peer.start()
+        first = peer._writer
+        peer.start()
+        assert peer._writer is first
+        await peer.close()
+
+    async def test_a_closed_peer_refuses_offers(self):
+        peer = Peer(FakeSocket())
+        await peer.close()
+        assert peer.offer(Envelope("x")) is False
+
+    async def test_closed_peers_do_not_start(self):
+        peer = Peer(FakeSocket())
+        await peer.close()
+        peer.start()
+        assert peer._writer is None
