@@ -39,3 +39,19 @@ class TestConstruction:
         assert "pending=0" in repr(peer)
         peer._closed = True
         assert "closed" in repr(peer)
+
+
+class TestEncodings:
+    @pytest.mark.parametrize(
+        ("encoding", "payload"),
+        [
+            (Encoding.JSON, {"a": 1}),
+            (Encoding.TEXT, "hello"),
+            (Encoding.BYTES, b"hello"),
+        ],
+    )
+    async def test_each_encoding_reaches_the_socket(self, encoding, payload):
+        socket = FakeSocket()
+        peer = Peer(socket, encoding=encoding)
+        await peer.send(payload)
+        assert socket.sent == [payload]
