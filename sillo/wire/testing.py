@@ -62,3 +62,25 @@ class FakeSocket:
 
     async def accept(self) -> None:
         """Accept the connection."""
+
+
+async def drain(*peers: Peer, timeout: float = 1.0) -> None:
+    """Wait until every peer's queue is empty.
+
+    A broadcast only enqueues, so a test that asserts on ``socket.sent``
+    straight afterwards is racing the writer task. This is the wait that makes
+    such an assertion deterministic.
+
+    Raises:
+        TimeoutError: If the queues have not emptied within *timeout*, which
+            means a writer is stuck rather than slow.
+    """
+
+    async def _wait() -> None:
+        while any(peer.pending for peer in peers):
+            await asyncio.sleep(0)
+        # One more yield so the write that emptied the queue completes before
+        # the caller inspects what the socket received.
+        await asyncio.sleep(0)
+
+    await asyncio.wait_for(_wait(), timeout=timeout)
