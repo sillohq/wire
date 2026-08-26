@@ -62,3 +62,16 @@ class TestMemoryBacklog:
 
     async def test_since_on_an_unknown_room_is_empty(self):
         assert await MemoryBacklog().since("nope", 0) == []
+
+    async def test_latest_limits_and_orders_oldest_first(self):
+        backlog = MemoryBacklog()
+        for n in range(10):
+            await backlog.append(Envelope(n, room="r"))
+        assert [e.payload for e in await backlog.latest("r", limit=3)] == [7, 8, 9]
+
+    async def test_latest_of_nothing_is_empty(self):
+        backlog = MemoryBacklog()
+        assert await backlog.latest("missing") == []
+        await backlog.append(Envelope("a", room="r"))
+        assert await backlog.latest("r", limit=0) == []
+        assert await backlog.latest("r", limit=-1) == []
