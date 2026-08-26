@@ -51,3 +51,14 @@ class TestMemoryBacklog:
         await backlog.append(Envelope("b", room="two"))
         assert len(await backlog.latest("one")) == 1
         assert sorted(backlog.rooms()) == ["one", "two"]
+
+    async def test_since_returns_only_what_follows_the_cursor(self):
+        backlog = MemoryBacklog()
+        envelopes = [Envelope(n, room="r") for n in range(5)]
+        for envelope in envelopes:
+            await backlog.append(envelope)
+        after = await backlog.since("r", envelopes[2].seq)
+        assert [e.payload for e in after] == [3, 4]
+
+    async def test_since_on_an_unknown_room_is_empty(self):
+        assert await MemoryBacklog().since("nope", 0) == []
