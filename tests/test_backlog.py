@@ -38,3 +38,9 @@ class TestMemoryBacklog:
         kept = [e.payload for e in await backlog.latest("r", limit=99)]
         assert kept == ["3" * 10, "4" * 10, "5" * 10]
         assert backlog.usage("r") == 30
+
+    async def test_one_oversized_message_is_still_kept(self):
+        """Better to hold one message over the cap than to hold nothing."""
+        backlog = MemoryBacklog(capacity_bytes=10)
+        await backlog.append(Envelope("x" * 5000, room="r"))
+        assert len(await backlog.latest("r")) == 1
