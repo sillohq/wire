@@ -36,3 +36,11 @@ class Backlog(typing.Protocol):
     async def append(self, envelope: Envelope) -> None:
         """Record *envelope* against its room."""
         ...
+
+    async def since(self, room: str, seq: int) -> list[Envelope]:
+        """Every retained envelope for *room* newer than *seq*, oldest first."""
+        ...
+
+    async def latest(self, room: str, limit: int = 50) -> list[Envelope]:
+        """The most recent *limit* envelopes for *room*, oldest first."""
+        ...
