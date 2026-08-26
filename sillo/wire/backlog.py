@@ -113,3 +113,28 @@ class MemoryBacklog:
     def rooms(self) -> list[str]:
         """Every room this backlog holds something for."""
         return list(self._rooms)
+
+
+class NullBacklog:
+    """Keeps nothing.
+
+    The right choice for traffic that is worthless a second later — cursors,
+    typing indicators, telemetry — where retaining it costs memory and buys
+    nobody anything.
+    """
+
+    __slots__ = ()
+
+    async def append(self, envelope: Envelope) -> None:
+        """Discard *envelope*."""
+
+    async def since(self, room: str, seq: int) -> list[Envelope]:
+        """Always empty."""
+        return []
+
+    async def latest(self, room: str, limit: int = 50) -> list[Envelope]:
+        """Always empty."""
+        return []
+
+    async def clear(self, room: str | None = None) -> None:
+        """Nothing to clear."""
