@@ -44,3 +44,10 @@ class TestMemoryBacklog:
         backlog = MemoryBacklog(capacity_bytes=10)
         await backlog.append(Envelope("x" * 5000, room="r"))
         assert len(await backlog.latest("r")) == 1
+
+    async def test_rooms_are_independent(self):
+        backlog = MemoryBacklog()
+        await backlog.append(Envelope("a", room="one"))
+        await backlog.append(Envelope("b", room="two"))
+        assert len(await backlog.latest("one")) == 1
+        assert sorted(backlog.rooms()) == ["one", "two"]
