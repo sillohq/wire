@@ -26,3 +26,15 @@ class TestMemoryBacklog:
             await backlog.append(Envelope("x" * 100, room="r"))
         assert backlog.usage("r") <= 1000
         assert len(await backlog.latest("r", limit=999)) == 10
+
+    async def test_eviction_is_oldest_first(self):
+        """And not 'discard everything', which is what the original did on
+        tripping its cap."""
+        backlog = MemoryBacklog(capacity_bytes=30)
+        for n in range(6):
+            await backlog.append(Envelope(f"{n}" * 10, room="r"))
+        # Three ten-byte messages fill a thirty-byte cap exactly, so the three
+        # most recent survive and the three oldest were evicted in order.
+        kept = [e.payload for e in await backlog.latest("r", limit=99)]
+        assert kept == ["3" * 10, "4" * 10, "5" * 10]
+        assert backlog.usage("r") == 30
