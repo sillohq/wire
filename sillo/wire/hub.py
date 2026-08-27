@@ -184,3 +184,37 @@ class Hub:
 
         report = DeliveryReport(delivered=delivered, dropped=dropped, failed=failed)
         return report, stale
+
+    # ── replay ───────────────────────────────────────────────────────────
+
+    async def replay(
+        self,
+        peer: Peer,
+        room: str,
+        *,
+        since: int = 0,
+        limit: int | None = None,
+    ) -> int:
+        """Send *peer* what it missed in *room*. Returns how many were sent.
+
+        The cursor a client sends back after reconnecting is the ``seq`` of the
+        last envelope it saw, which is why sequences are monotonic and never
+        reused.
+        """
+        missed = await self._backlog.since(room, since)
+        if limit is not None:
+            missed = missed[-limit:] if limit > 0 else []
+
+        sent = 0
+        for envelope in missed:
+            if peer.offer(envelope):
+                sent += 1
+        return sent
+
+    async def history(self, room: str, limit: int = 50) -> list[Envelope]:
+        """The most recent envelopes retained for *room*."""
+        return await self._backlog.latest(room, limit=limit)
+
+    async def clear_history(self, room: str | None = None) -> None:
+        """Forget *room*'s backlog, or every room's."""
+        await self._backlog.clear(room)
