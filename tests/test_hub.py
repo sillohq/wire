@@ -93,3 +93,8 @@ class TestBroadcast:
         assert report.attempted == 3
         for peer in peers:
             assert peer.socket.sent == [{"hello": True}]
+
+    async def test_an_unknown_room_is_an_empty_report_not_an_error(self):
+        report = await Hub().broadcast("nobody-here", "x")
+        assert report.attempted == 0
+        assert not report
