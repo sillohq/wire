@@ -75,3 +75,25 @@ class TestMemoryBacklog:
         await backlog.append(Envelope("a", room="r"))
         assert await backlog.latest("r", limit=0) == []
         assert await backlog.latest("r", limit=-1) == []
+
+    async def test_clear_one_room(self):
+        backlog = MemoryBacklog()
+        await backlog.append(Envelope("a", room="one"))
+        await backlog.append(Envelope("b", room="two"))
+        await backlog.clear("one")
+        assert await backlog.latest("one") == []
+        assert len(await backlog.latest("two")) == 1
+        assert backlog.usage("one") == 0
+
+    async def test_clear_everything(self):
+        backlog = MemoryBacklog()
+        await backlog.append(Envelope("a", room="one"))
+        await backlog.append(Envelope("b", room="two"))
+        await backlog.clear()
+        assert backlog.rooms() == []
+
+    async def test_clearing_an_unknown_room_is_not_an_error(self):
+        await MemoryBacklog().clear("never-existed")
+
+    async def test_usage_of_an_unknown_room_is_zero(self):
+        assert MemoryBacklog().usage("nope") == 0
