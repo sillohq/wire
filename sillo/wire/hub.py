@@ -130,3 +130,26 @@ class Hub:
             if not members:
                 del self._rooms[room]
         return report
+
+    async def send_to(
+        self, identity: typing.Any, payload: typing.Any
+    ) -> DeliveryReport:
+        """Deliver *payload* to every peer carrying *identity*.
+
+        This is the "reach that user wherever they are" call — one person with
+        a phone and two tabs is three peers, and all three get it. Nothing is
+        retained: the message is addressed to a person, not to a room, so there
+        is no room whose history it belongs in.
+        """
+        targets = {
+            peer
+            for members in self._rooms.values()
+            for peer in members
+            if peer.identity == identity
+        }
+        if not targets:
+            return DeliveryReport()
+        # Stale peers are not evicted here: a peer reached by identity may be
+        # in several rooms, and removing it from all of them is `prune`'s job.
+        report, _ = self._offer_all(targets, Envelope(payload=payload))
+        return report
