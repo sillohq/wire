@@ -97,3 +97,13 @@ class TestMemoryBacklog:
 
     async def test_usage_of_an_unknown_room_is_zero(self):
         assert MemoryBacklog().usage("nope") == 0
+
+
+class TestNullBacklog:
+    async def test_it_keeps_nothing(self):
+        backlog = NullBacklog()
+        await backlog.append(Envelope("a", room="r"))
+        assert await backlog.latest("r") == []
+        assert await backlog.since("r", 0) == []
+        await backlog.clear("r")
+        await backlog.clear()
