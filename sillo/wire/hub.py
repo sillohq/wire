@@ -80,3 +80,18 @@ class Hub:
             del self._rooms[room]
         await self._announce(self._on_leave, room, peer)
         return True
+
+    async def leave_all(self, peer: Peer) -> list[str]:
+        """Remove *peer* from every room. Returns the rooms it was in."""
+        left = [room for room, members in self._rooms.items() if peer in members]
+        for room in left:
+            await self.leave(peer, room)
+        return left
+
+    async def disconnect(self, peer: Peer) -> None:
+        """Remove *peer* from every room and close its socket.
+
+        The one call a consumer's disconnect path needs.
+        """
+        await self.leave_all(peer)
+        await peer.close()
