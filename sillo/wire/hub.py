@@ -44,3 +44,39 @@ class Hub:
         self._backlog: Backlog = MemoryBacklog() if backlog is None else backlog
         self._on_join: list[PresenceListener] = []
         self._on_leave: list[PresenceListener] = []
+
+    # ── membership ───────────────────────────────────────────────────────
+
+    async def join(self, peer: Peer, room: str) -> bool:
+        """Subscribe *peer* to *room*. Returns whether it was newly added.
+
+        Starts the peer's writer if it is not already running, so a caller
+        never has to remember to.
+        """
+        if not room:
+            raise ValueError("room name must not be empty")
+
+        members = self._rooms.setdefault(room, set())
+        if peer in members:
+            return False
+
+        members.add(peer)
+        peer.start()
+        await self._announce(self._on_join, room, peer)
+        return True
+
+    async def leave(self, peer: Peer, room: str) -> bool:
+        """Unsubscribe *peer* from *room*. Returns whether it was a member.
+
+        Leaving a room that does not exist, or that the peer is not in, is not
+        an error — a disconnect racing a cleanup produces both, routinely.
+        """
+        members = self._rooms.get(room)
+        if members is None or peer not in members:
+            return False
+
+        members.discard(peer)
+        if not members:
+            del self._rooms[room]
+        await self._announce(self._on_leave, room, peer)
+        return True
