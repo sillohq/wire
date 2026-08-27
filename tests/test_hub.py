@@ -98,3 +98,23 @@ class TestBroadcast:
         report = await Hub().broadcast("nobody-here", "x")
         assert report.attempted == 0
         assert not report
+
+    async def test_one_stalled_peer_does_not_hold_up_the_room(self):
+        """The bug this package exists to not have: the original fan-out
+        awaited each socket in turn, so a single slow client serialised
+        everybody behind it."""
+        hub = Hub()
+        slow = Peer(FakeSocket(delay=5), capacity=4)
+        quick = [make_peer() for _ in range(5)]
+        for peer in (slow, *quick):
+            await hub.join(peer, "room")
+
+        started = time.perf_counter()
+        report = await hub.broadcast("room", "ping")
+        elapsed = time.perf_counter() - started
+
+        assert elapsed < 0.05
+        assert report.delivered == 6
+        await drain(*quick)
+        assert all(p.socket.sent == ["ping"] for p in quick)
+        await hub.close()
