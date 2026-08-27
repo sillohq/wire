@@ -77,3 +77,19 @@ class TestMembership:
         await hub.disconnect(peer)
         assert hub.rooms() == []
         assert peer.closed
+
+
+class TestBroadcast:
+    async def test_everyone_in_the_room_gets_it(self):
+        hub = Hub()
+        peers = [make_peer() for _ in range(3)]
+        for peer in peers:
+            await hub.join(peer, "room")
+
+        report = await hub.broadcast("room", {"hello": True})
+        await drain(*peers)
+
+        assert report.delivered == 3
+        assert report.attempted == 3
+        for peer in peers:
+            assert peer.socket.sent == [{"hello": True}]
