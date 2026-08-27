@@ -242,3 +242,41 @@ class Hub:
             result = listener(room, peer)
             if inspect.isawaitable(result):
                 await result
+
+    # ── introspection ────────────────────────────────────────────────────
+
+    def rooms(self) -> list[str]:
+        """Every room with at least one peer in it."""
+        return list(self._rooms)
+
+    def members(self, room: str) -> list[Peer]:
+        """The peers in *room*, or an empty list if there is no such room."""
+        return list(self._rooms.get(room, ()))
+
+    def identities(self, room: str) -> list[typing.Any]:
+        """Distinct, non-``None`` identities present in *room*.
+
+        The presence roster: who is here, rather than how many sockets are.
+
+        Raises:
+            RoomNotFound: If *room* does not exist. Unlike a broadcast, asking
+                who is in a room that has never existed is a question with no
+                sensible empty answer — it is usually a typo.
+        """
+        if room not in self._rooms:
+            raise RoomNotFound(room)
+        seen: list[typing.Any] = []
+        for peer in self._rooms[room]:
+            if peer.identity is not None and peer.identity not in seen:
+                seen.append(peer.identity)
+        return seen
+
+    def count(self, room: str | None = None) -> int:
+        """Peers in *room*, or across every room when *room* is ``None``.
+
+        A peer in two rooms counts twice in the total, because the number being
+        reported is subscriptions rather than connections.
+        """
+        if room is not None:
+            return len(self._rooms.get(room, ()))
+        return sum(len(members) for members in self._rooms.values())
