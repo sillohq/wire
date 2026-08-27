@@ -1,6 +1,7 @@
 from sillo.wire.backlog import Backlog, MemoryBacklog, NullBacklog
 from sillo.wire.envelope import DeliveryReport, Encoding, Envelope
 from sillo.wire.errors import PeerGone, RoomNotFound, WireError
+from sillo.wire.hub import Hub
 from sillo.wire.peer import Peer
 from sillo.wire.policy import Overflow
 
@@ -11,6 +12,7 @@ __all__ = [
     "DeliveryReport",
     "Encoding",
     "Envelope",
+    "Hub",
     "MemoryBacklog",
     "NullBacklog",
     "Overflow",
