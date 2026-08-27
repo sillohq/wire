@@ -218,3 +218,27 @@ class Hub:
     async def clear_history(self, room: str | None = None) -> None:
         """Forget *room*'s backlog, or every room's."""
         await self._backlog.clear(room)
+
+    # ── presence ─────────────────────────────────────────────────────────
+
+    def on_join(self, listener: PresenceListener) -> PresenceListener:
+        """Register *listener*, called when a peer joins a room.
+
+        Returns the listener, so it works as a decorator.
+        """
+        self._on_join.append(listener)
+        return listener
+
+    def on_leave(self, listener: PresenceListener) -> PresenceListener:
+        """Register *listener*, called when a peer leaves a room."""
+        self._on_leave.append(listener)
+        return listener
+
+    async def _announce(
+        self, listeners: list[PresenceListener], room: str, peer: Peer
+    ) -> None:
+        """Run presence listeners, tolerating both sync and async ones."""
+        for listener in listeners:
+            result = listener(room, peer)
+            if inspect.isawaitable(result):
+                await result
