@@ -280,3 +280,28 @@ class Hub:
         if room is not None:
             return len(self._rooms.get(room, ()))
         return sum(len(members) for members in self._rooms.values())
+
+    async def prune(self) -> list[Peer]:
+        """Evict closed and idle peers from every room. Returns those removed.
+
+        Nothing calls this on a timer — when it runs is an application's
+        decision, because the right cadence depends on how long a stale
+        subscription actually costs anything.
+        """
+        removed: list[Peer] = []
+        for room in list(self._rooms):
+            for peer in list(self._rooms.get(room, ())):
+                if peer.closed or peer.is_idle():
+                    await self.leave(peer, room)
+                    if peer not in removed:
+                        removed.append(peer)
+        return removed
+
+    async def close(self) -> None:
+        """Close every peer and drop every room."""
+        for peer in {p for members in self._rooms.values() for p in members}:
+            await peer.close()
+        self._rooms.clear()
+
+    def __repr__(self) -> str:
+        return f"<Hub rooms={len(self._rooms)} peers={self.count()}>"
