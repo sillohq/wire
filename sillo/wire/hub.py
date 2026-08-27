@@ -95,3 +95,38 @@ class Hub:
         """
         await self.leave_all(peer)
         await peer.close()
+
+    # ── delivery ─────────────────────────────────────────────────────────
+
+    async def broadcast(
+        self,
+        room: str,
+        payload: typing.Any,
+        *,
+        retain: bool = True,
+    ) -> DeliveryReport:
+        """Deliver *payload* to every peer in *room*.
+
+        Args:
+            room: Which room to deliver to. An unknown room is an empty report,
+                not an error — rooms come and go with their last member.
+            payload: What to send.
+            retain: Whether to record the envelope in the backlog for replay.
+
+        Returns:
+            What happened, per peer.
+        """
+        envelope = Envelope(payload=payload, room=room)
+        if retain:
+            await self._backlog.append(envelope)
+
+        members = self._rooms.get(room)
+        if not members:
+            return DeliveryReport()
+
+        report, stale = self._offer_all(members, envelope)
+        if stale:
+            members.difference_update(stale)
+            if not members:
+                del self._rooms[room]
+        return report
