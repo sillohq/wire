@@ -153,3 +153,34 @@ class Hub:
         # in several rooms, and removing it from all of them is `prune`'s job.
         report, _ = self._offer_all(targets, Envelope(payload=payload))
         return report
+
+    def _offer_all(
+        self,
+        peers: typing.Iterable[Peer],
+        envelope: Envelope,
+    ) -> tuple[DeliveryReport, list[Peer]]:
+        """Enqueue *envelope* on each peer; report the outcome and the dead.
+
+        Synchronous on purpose. ``offer`` cannot block, so there is nothing to
+        await and no window in which the room's membership could change
+        underneath the loop — which is why the caller can act on the returned
+        stale list against the very set it passed in.
+        """
+        delivered = dropped = failed = 0
+        stale: list[Peer] = []
+
+        for peer in list(peers):
+            if peer.closed:
+                failed += 1
+                stale.append(peer)
+            elif peer.offer(envelope):
+                delivered += 1
+            else:
+                dropped += 1
+                # An overflow policy of CLOSE marks the peer closed as it
+                # refuses the message, so it is evictable in the same pass.
+                if peer.closed:
+                    stale.append(peer)
+
+        report = DeliveryReport(delivered=delivered, dropped=dropped, failed=failed)
+        return report, stale
