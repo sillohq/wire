@@ -203,3 +203,48 @@ class TestSendTo:
         await hub.join(peer, "one")
         await hub.join(peer, "two")
         assert (await hub.send_to("ada", "x")).delivered == 1
+
+
+class TestReplay:
+    async def test_a_reconnecting_client_gets_only_what_it_missed(self):
+        hub = Hub()
+        first = make_peer()
+        await hub.join(first, "room")
+        await hub.broadcast("room", "one")
+        await hub.broadcast("room", "two")
+        cursor = (await hub.history("room"))[-1].seq
+        await hub.broadcast("room", "three")
+
+        returning = make_peer()
+        await hub.join(returning, "room")
+        sent = await hub.replay(returning, "room", since=cursor)
+        await drain(returning)
+
+        assert sent == 1
+        assert returning.socket.sent == ["three"]
+
+    async def test_replaying_from_zero_gives_everything(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        for n in range(3):
+            await hub.broadcast("room", n)
+        peer = make_peer()
+        await hub.join(peer, "room")
+        assert await hub.replay(peer, "room") == 3
+
+    async def test_replay_respects_a_limit(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        for n in range(5):
+            await hub.broadcast("room", n)
+        peer = make_peer()
+        assert await hub.replay(peer, "room", limit=2) == 2
+        assert await hub.replay(peer, "room", limit=0) == 0
+
+    async def test_replay_counts_only_what_was_accepted(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        for n in range(5):
+            await hub.broadcast("room", n)
+        peer = Peer(FakeSocket(delay=5), capacity=2, overflow=Overflow.DROP_NEWEST)
+        assert await hub.replay(peer, "room") == 2
