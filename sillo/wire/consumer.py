@@ -152,3 +152,26 @@ class RoomConsumer:
         if removed and room in self.joined:
             self.joined.remove(room)
         return removed
+
+    # ── hooks ────────────────────────────────────────────────────────────
+
+    async def identify(self, ctx: typing.Any) -> typing.Any:
+        """Who this connection belongs to. ``None`` means anonymous.
+
+        Called once, before any room is joined, so the identity is already set
+        when presence listeners fire.
+        """
+        return None
+
+    async def rooms(self, ctx: typing.Any) -> list[str]:
+        """Which rooms to join on connect. Defaults to none."""
+        return []
+
+    async def on_connect(self) -> None:
+        """Called once the peer is in its rooms."""
+
+    async def on_message(self, data: typing.Any) -> None:
+        """Called for each message received. Override this."""
+
+    async def on_disconnect(self) -> None:
+        """Called once as the connection ends, before the peer is removed."""
