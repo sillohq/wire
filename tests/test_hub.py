@@ -381,3 +381,17 @@ class TestIsolation:
         await hub.close()
         assert hub.rooms() == []
         assert all(p.closed for p in peers)
+
+
+class TestEncodingsThroughTheHub:
+    @pytest.mark.parametrize(
+        ("encoding", "payload"),
+        [(Encoding.TEXT, "hi"), (Encoding.BYTES, b"hi"), (Encoding.JSON, {"a": 1})],
+    )
+    async def test_the_peer_encoding_is_honoured(self, encoding, payload):
+        hub = Hub()
+        peer = Peer(FakeSocket(), encoding=encoding)
+        await hub.join(peer, "room")
+        await hub.broadcast("room", payload)
+        await drain(peer)
+        assert peer.socket.sent == [payload]
