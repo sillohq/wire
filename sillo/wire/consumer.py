@@ -78,3 +78,43 @@ class RoomConsumer:
             await cls(hub)(ctx)
 
         return handler
+
+    # ── the loop ─────────────────────────────────────────────────────────
+
+    async def __call__(self, ctx: typing.Any) -> None:
+        """Run one connection to completion."""
+        self.ctx = ctx
+        await ctx.accept()
+
+        self.peer = Peer(
+            ctx,
+            encoding=self.encoding,
+            identity=await self.identify(ctx),
+            capacity=self.capacity,
+            overflow=self.overflow,
+        )
+
+        try:
+            for room in await self.rooms(ctx):
+                await self._hub.join(self.peer, room)
+                self.joined.append(room)
+
+            await self.on_connect()
+            await self._pump()
+        finally:
+            # Runs on a clean close, a client disconnect, and an exception in a
+            # hook alike. Leaving a peer subscribed after its socket is gone is
+            # the leak this exists to prevent.
+            await self.on_disconnect()
+            await self._hub.disconnect(self.peer)
+
+    async def _pump(self) -> None:
+        """Read from the socket until it closes, dispatching each message."""
+        iterator = {
+            Encoding.JSON: "iter_json",
+            Encoding.TEXT: "iter_text",
+            Encoding.BYTES: "iter_bytes",
+        }[self.encoding]
+
+        async for message in getattr(self.ctx, iterator)():
+            await self.on_message(message)
