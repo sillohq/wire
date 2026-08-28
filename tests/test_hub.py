@@ -137,3 +137,32 @@ class TestBroadcast:
         await peer.close()
         await hub.broadcast("room", "x")
         assert hub.rooms() == []
+
+    async def test_a_full_queue_is_dropped_not_failed(self):
+        hub = Hub()
+        peer = Peer(FakeSocket(delay=5), capacity=1, overflow=Overflow.DROP_NEWEST)
+        await hub.join(peer, "room")
+        # Fill the queue directly rather than through the hub: whether the
+        # writer has already dequeued a message is a race, and the behaviour
+        # under test is what happens once the queue is genuinely full.
+        while peer.pending < peer.capacity:
+            peer.offer(Envelope("filler"))
+
+        report = await hub.broadcast("room", "overflow")
+        assert report.dropped == 1
+        assert report.delivered == 0
+        await hub.close()
+
+    async def test_close_policy_evicts_on_overflow(self):
+        hub = Hub()
+        peer = Peer(FakeSocket(delay=5), capacity=1, overflow=Overflow.CLOSE)
+        await hub.join(peer, "room")
+        while peer.pending < peer.capacity:
+            peer.offer(Envelope("filler"))
+
+        report = await hub.broadcast("room", "overflow")
+        assert report.dropped == 1
+        assert peer.closed
+        # The policy closed the peer as it refused the message, so the same
+        # fan-out evicts it — and it was the room's only member.
+        assert hub.rooms() == []
