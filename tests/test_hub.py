@@ -272,3 +272,41 @@ class TestReplay:
         await hub.join(make_peer(), "room")
         await hub.broadcast("room", "x")
         assert backlog.usage("room") > 0
+
+
+class TestPresence:
+    async def test_join_and_leave_listeners_fire(self):
+        hub, seen = Hub(), []
+
+        @hub.on_join
+        def joined(room, peer):
+            seen.append(("join", room))
+
+        @hub.on_leave
+        async def left(room, peer):
+            seen.append(("leave", room))
+
+        peer = make_peer()
+        await hub.join(peer, "room")
+        await hub.leave(peer, "room")
+        assert seen == [("join", "room"), ("leave", "room")]
+
+    async def test_a_listener_is_returned_so_it_decorates(self):
+        hub = Hub()
+
+        def listener(room, peer): ...
+
+        assert hub.on_join(listener) is listener
+        assert hub.on_leave(listener) is listener
+
+    async def test_identities_are_the_roster(self):
+        hub = Hub()
+        await hub.join(make_peer(identity="ada"), "room")
+        await hub.join(make_peer(identity="ada"), "room")
+        await hub.join(make_peer(identity="bob"), "room")
+        await hub.join(make_peer(), "room")
+        assert sorted(hub.identities("room")) == ["ada", "bob"]
+
+    async def test_asking_about_a_room_that_does_not_exist(self):
+        with pytest.raises(RoomNotFound):
+            Hub().identities("ghost")
