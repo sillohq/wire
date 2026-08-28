@@ -61,3 +61,20 @@ class RoomConsumer:
         self.peer: Peer | None = None
         self.ctx: typing.Any = None
         self.joined: list[str] = []
+
+    # ── registration ─────────────────────────────────────────────────────
+
+    @classmethod
+    def as_handler(cls, hub: Hub | None = None) -> typing.Callable[..., typing.Any]:
+        """Build the coroutine to hand to ``@app.ws_route``.
+
+        Path parameters arrive as keyword arguments, exactly as on an HTTP
+        route, and are forwarded to :meth:`rooms` through the context rather
+        than to the hooks — the hooks have a fixed shape so subclasses do not
+        each have to declare them.
+        """
+
+        async def handler(ctx: typing.Any, **params: typing.Any) -> None:
+            await cls(hub)(ctx)
+
+        return handler
