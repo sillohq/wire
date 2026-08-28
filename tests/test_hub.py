@@ -362,3 +362,22 @@ class TestPruning:
         await hub.join(make_peer(), "room")
         assert await hub.prune() == []
         await hub.close()
+
+
+class TestIsolation:
+    async def test_two_hubs_do_not_see_each_other(self):
+        """The reason this is an object and not a module of class methods
+        over a global dict."""
+        one, two = Hub(), Hub()
+        await one.join(make_peer(), "room")
+        assert two.rooms() == []
+        assert two.count() == 0
+
+    async def test_close_shuts_everything(self):
+        hub = Hub()
+        peers = [make_peer() for _ in range(3)]
+        for peer in peers:
+            await hub.join(peer, "room")
+        await hub.close()
+        assert hub.rooms() == []
+        assert all(p.closed for p in peers)
