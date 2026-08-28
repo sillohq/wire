@@ -166,3 +166,10 @@ class TestBroadcast:
         # The policy closed the peer as it refused the message, so the same
         # fan-out evicts it — and it was the room's only member.
         assert hub.rooms() == []
+
+    async def test_retain_false_skips_the_backlog(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        await hub.broadcast("room", "kept")
+        await hub.broadcast("room", "transient", retain=False)
+        assert [e.payload for e in await hub.history("room")] == ["kept"]
