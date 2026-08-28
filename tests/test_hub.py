@@ -248,3 +248,27 @@ class TestReplay:
             await hub.broadcast("room", n)
         peer = Peer(FakeSocket(delay=5), capacity=2, overflow=Overflow.DROP_NEWEST)
         assert await hub.replay(peer, "room") == 2
+
+    async def test_history_and_clearing_it(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        await hub.broadcast("room", "x")
+        assert len(await hub.history("room")) == 1
+        await hub.clear_history("room")
+        assert await hub.history("room") == []
+        await hub.broadcast("room", "y")
+        await hub.clear_history()
+        assert await hub.history("room") == []
+
+    async def test_a_null_backlog_retains_nothing(self):
+        hub = Hub(backlog=NullBacklog())
+        await hub.join(make_peer(), "room")
+        await hub.broadcast("room", "x")
+        assert await hub.history("room") == []
+
+    async def test_a_backlog_can_be_supplied(self):
+        backlog = MemoryBacklog(capacity_bytes=64)
+        hub = Hub(backlog=backlog)
+        await hub.join(make_peer(), "room")
+        await hub.broadcast("room", "x")
+        assert backlog.usage("room") > 0
