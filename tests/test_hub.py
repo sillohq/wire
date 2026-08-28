@@ -118,3 +118,22 @@ class TestBroadcast:
         await drain(*quick)
         assert all(p.socket.sent == ["ping"] for p in quick)
         await hub.close()
+
+    async def test_a_closed_peer_counts_as_failed_and_is_evicted(self):
+        hub = Hub()
+        alive, dead = make_peer(), make_peer()
+        await hub.join(alive, "room")
+        await hub.join(dead, "room")
+        await dead.close()
+
+        report = await hub.broadcast("room", "x")
+        assert report.delivered == 1
+        assert report.failed == 1
+        assert hub.members("room") == [alive]
+
+    async def test_evicting_the_last_peer_removes_the_room(self):
+        hub, peer = Hub(), make_peer()
+        await hub.join(peer, "room")
+        await peer.close()
+        await hub.broadcast("room", "x")
+        assert hub.rooms() == []
