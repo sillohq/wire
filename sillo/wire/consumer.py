@@ -118,3 +118,37 @@ class RoomConsumer:
 
         async for message in getattr(self.ctx, iterator)():
             await self.on_message(message)
+
+    # ── helpers ──────────────────────────────────────────────────────────
+
+    async def broadcast(
+        self, payload: typing.Any, room: str | None = None
+    ) -> DeliveryReport:
+        """Send *payload* to *room*, defaulting to the first room joined."""
+        target = room if room is not None else (self.joined[0] if self.joined else None)
+        if target is None:
+            return DeliveryReport()
+        return await self._hub.broadcast(target, payload)
+
+    async def reply(self, payload: typing.Any) -> None:
+        """Send *payload* to this connection alone."""
+        if self.peer is not None:
+            await self.peer.send(payload)
+
+    async def join(self, room: str) -> bool:
+        """Subscribe this connection to another room."""
+        if self.peer is None:  # pragma: no cover - unreachable inside __call__
+            return False
+        added = await self._hub.join(self.peer, room)
+        if added:
+            self.joined.append(room)
+        return added
+
+    async def leave(self, room: str) -> bool:
+        """Unsubscribe this connection from *room*."""
+        if self.peer is None:  # pragma: no cover - unreachable inside __call__
+            return False
+        removed = await self._hub.leave(self.peer, room)
+        if removed and room in self.joined:
+            self.joined.remove(room)
+        return removed
