@@ -173,3 +173,33 @@ class TestBroadcast:
         await hub.broadcast("room", "kept")
         await hub.broadcast("room", "transient", retain=False)
         assert [e.payload for e in await hub.history("room")] == ["kept"]
+
+
+class TestSendTo:
+    async def test_every_connection_that_identity_has(self):
+        """One person with a phone and two tabs is three peers."""
+        hub = Hub()
+        phone = make_peer(identity="ada")
+        tab_one = make_peer(identity="ada")
+        tab_two = make_peer(identity="ada")
+        other = make_peer(identity="bob")
+        for peer in (phone, tab_one, tab_two, other):
+            await hub.join(peer, "room")
+
+        report = await hub.send_to("ada", "just for you")
+        await drain(phone, tab_one, tab_two, other)
+
+        assert report.delivered == 3
+        assert other.socket.sent == []
+
+    async def test_an_unknown_identity_delivers_nothing(self):
+        hub = Hub()
+        await hub.join(make_peer(identity="ada"), "room")
+        assert (await hub.send_to("nobody", "x")).attempted == 0
+
+    async def test_it_reaches_across_rooms(self):
+        hub = Hub()
+        peer = make_peer(identity="ada")
+        await hub.join(peer, "one")
+        await hub.join(peer, "two")
+        assert (await hub.send_to("ada", "x")).delivered == 1
