@@ -1,4 +1,37 @@
+"""Rooms, presence and fan-out for Sillo WebSockets.
+
+Install as ``sillo-wire``; import as ``sillo.wire``::
+
+    from sillo import SilloApp
+    from sillo.wire import Hub, Peer
+
+    app = SilloApp()
+    hub = Hub()
+
+    @app.ws_route("/ws/room/{name}")
+    async def room(socket, name: str):
+        await socket.accept()
+        peer = Peer(socket, identity=socket.query_params.get("user"))
+        await hub.join(peer, name)
+        try:
+            async for message in socket.iter_json():
+                await hub.broadcast(name, message)
+        finally:
+            await hub.disconnect(peer)
+
+Three things differ from a naive implementation, and they are the reason this
+package exists:
+
+* **A broadcast never blocks.** Peers have bounded queues and a writer each, so
+  one client that has stopped reading cannot stall the room behind it.
+* **Nothing is global.** A :class:`Hub` is an object. Two of them are two
+  independent worlds, which is what makes tests and multi-tenancy simple.
+* **History is replayable.** Envelopes carry a monotonic sequence, so a client
+  that reconnects asks for what it missed rather than for everything.
+"""
+
 from sillo.wire.backlog import Backlog, MemoryBacklog, NullBacklog
+from sillo.wire.consumer import RoomConsumer
 from sillo.wire.envelope import DeliveryReport, Encoding, Envelope
 from sillo.wire.errors import PeerGone, RoomNotFound, WireError
 from sillo.wire.hub import Hub
@@ -18,6 +51,7 @@ __all__ = [
     "Overflow",
     "Peer",
     "PeerGone",
+    "RoomConsumer",
     "RoomNotFound",
     "WireError",
     "__version__",
