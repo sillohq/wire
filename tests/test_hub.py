@@ -310,3 +310,25 @@ class TestPresence:
     async def test_asking_about_a_room_that_does_not_exist(self):
         with pytest.raises(RoomNotFound):
             Hub().identities("ghost")
+
+
+class TestIntrospection:
+    async def test_counts(self):
+        hub = Hub()
+        peer = make_peer()
+        await hub.join(peer, "one")
+        await hub.join(peer, "two")
+        await hub.join(make_peer(), "one")
+        assert hub.count("one") == 2
+        assert hub.count("missing") == 0
+        # Subscriptions, not connections: the shared peer counts in both rooms.
+        assert hub.count() == 3
+
+    async def test_members_of_an_unknown_room_is_empty(self):
+        assert Hub().members("nope") == []
+
+    async def test_repr(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        assert "rooms=1" in repr(hub)
+        assert "peers=1" in repr(hub)
