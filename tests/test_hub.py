@@ -332,3 +332,33 @@ class TestIntrospection:
         await hub.join(make_peer(), "room")
         assert "rooms=1" in repr(hub)
         assert "peers=1" in repr(hub)
+
+
+class TestPruning:
+    async def test_it_evicts_closed_peers(self):
+        hub, alive, dead = Hub(), make_peer(), make_peer()
+        await hub.join(alive, "room")
+        await hub.join(dead, "room")
+        await dead.close()
+        assert await hub.prune() == [dead]
+        assert hub.members("room") == [alive]
+
+    async def test_it_evicts_idle_peers(self):
+        hub = Hub()
+        stale = Peer(FakeSocket(), idle_timeout=0.01)
+        await hub.join(stale, "room")
+        await asyncio.sleep(0.02)
+        assert await hub.prune() == [stale]
+
+    async def test_a_peer_in_two_rooms_is_reported_once(self):
+        hub, peer = Hub(), make_peer()
+        await hub.join(peer, "one")
+        await hub.join(peer, "two")
+        await peer.close()
+        assert await hub.prune() == [peer]
+
+    async def test_nothing_to_prune(self):
+        hub = Hub()
+        await hub.join(make_peer(), "room")
+        assert await hub.prune() == []
+        await hub.close()
