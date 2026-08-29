@@ -73,3 +73,34 @@ class TestWiring:
         hub = Hub()
         handler = RoomConsumer.as_handler(hub)
         await handler(Socket(), room="lobby")
+
+
+class TestLifecycle:
+    async def test_it_accepts_joins_and_cleans_up(self):
+        hub = Hub()
+        events = []
+
+        class Chat(RoomConsumer):
+            async def rooms(self, ctx):
+                return ["lobby"]
+
+            async def on_connect(self):
+                events.append("connect")
+
+            async def on_message(self, data):
+                events.append(("message", data))
+
+            async def on_disconnect(self):
+                events.append("disconnect")
+
+        socket = Socket(incoming=[{"n": 1}, {"n": 2}])
+        await Chat(hub)(socket)
+
+        assert socket.accepted
+        assert events == [
+            "connect",
+            ("message", {"n": 1}),
+            ("message", {"n": 2}),
+            "disconnect",
+        ]
+        assert hub.rooms() == []
