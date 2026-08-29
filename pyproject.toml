@@ -68,3 +68,9 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+# `sillo/` has no __init__.py in this checkout — it belongs to sillo-framework,
+# and this repo ships only the subpackage into it.
+explicit_package_bases = true
+namespace_packages = true
