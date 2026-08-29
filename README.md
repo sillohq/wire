@@ -72,3 +72,21 @@ Peer(socket, overflow=Overflow.DROP_OLDEST)   # keep current — prices, cursors
 Peer(socket, overflow=Overflow.DROP_NEWEST)   # keep order — reconcile later
 Peer(socket, overflow=Overflow.CLOSE)         # disconnect and let it reconnect
 ```
+
+## Presence
+
+```python
+@hub.on_join
+async def joined(room, peer):
+    await hub.broadcast(room, {"event": "joined", "who": peer.identity})
+
+hub.identities("lobby")   # ["ada", "bob"] — people, not sockets
+hub.count("lobby")        # 5 — subscriptions
+```
+
+Two peers can share an identity — the same person with a phone and two tabs —
+and `send_to` reaches all of them:
+
+```python
+await hub.send_to("ada", {"notice": "your export is ready"})
+```
