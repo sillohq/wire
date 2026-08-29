@@ -104,3 +104,20 @@ class TestLifecycle:
             "disconnect",
         ]
         assert hub.rooms() == []
+
+    async def test_the_peer_is_removed_even_when_a_hook_raises(self):
+        """Leaving a peer subscribed after its socket is gone is the leak
+        this exists to prevent."""
+        hub = Hub()
+
+        class Exploding(RoomConsumer):
+            async def rooms(self, ctx):
+                return ["lobby"]
+
+            async def on_message(self, data):
+                raise RuntimeError("handler blew up")
+
+        with pytest.raises(RuntimeError, match="blew up"):
+            await Exploding(hub)(Socket(incoming=["boom"]))
+
+        assert hub.rooms() == []
