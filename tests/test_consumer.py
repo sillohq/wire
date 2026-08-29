@@ -121,3 +121,25 @@ class TestLifecycle:
             await Exploding(hub)(Socket(incoming=["boom"]))
 
         assert hub.rooms() == []
+
+    async def test_identity_is_set_before_presence_fires(self):
+        hub, seen = Hub(), []
+
+        @hub.on_join
+        def watch(room, peer):
+            seen.append(peer.identity)
+
+        class Known(RoomConsumer):
+            async def identify(self, ctx):
+                return "ada"
+
+            async def rooms(self, ctx):
+                return ["lobby"]
+
+        await Known(hub)(Socket())
+        assert seen == ["ada"]
+
+    async def test_no_rooms_by_default(self):
+        hub = Hub()
+        await RoomConsumer(hub)(Socket())
+        assert hub.rooms() == []
