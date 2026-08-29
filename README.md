@@ -130,3 +130,26 @@ Hub(backlog=NullBacklog())    # keep nothing — typing indicators, telemetry
 
 `Backlog` is a `Protocol`, so a Redis or Postgres store satisfies it without
 importing anything from here.
+
+## Testing
+
+`sillo.wire.testing` ships the piece unit tests are missing — a socket:
+
+```python
+from sillo.wire import Hub, Peer
+from sillo.wire.testing import FakeSocket, drain
+
+async def test_a_broadcast_reaches_the_room():
+    hub, socket = Hub(), FakeSocket()
+    peer = Peer(socket)
+    await hub.join(peer, "lobby")
+
+    await hub.broadcast("lobby", {"hello": True})
+    await drain(peer)          # broadcasts enqueue; this waits for the write
+
+    assert socket.sent == [{"hello": True}]
+```
+
+`FakeSocket(delay=…)` simulates a client that is slow to read, and
+`FakeSocket(fail=True)` one that has gone away — the two cases that are hardest
+to reproduce against a real server and the two most worth testing.
