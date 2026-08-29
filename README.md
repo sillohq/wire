@@ -164,3 +164,11 @@ to reproduce against a real server and the two most worth testing.
 | `DeliveryReport` | `delivered` `dropped` `failed` `attempted` |
 | `Backlog` | `MemoryBacklog` `NullBacklog`, or your own |
 | `Overflow` | `DROP_OLDEST` `DROP_NEWEST` `CLOSE` |
+
+## Requirements
+
+Python 3.10+, `sillo-framework` 0.3 or newer. No other dependencies.
+
+## Licence
+
+BSD-3-Clause.
