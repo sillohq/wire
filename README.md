@@ -90,3 +90,29 @@ and `send_to` reaches all of them:
 ```python
 await hub.send_to("ada", {"notice": "your export is ready"})
 ```
+
+## Consumers
+
+`RoomConsumer` is the class-based form. It accepts the socket, builds the peer,
+joins the rooms, pumps messages, and guarantees the peer is removed from every
+room when the connection ends — including when a hook raises.
+
+```python
+from sillo.wire import Hub, RoomConsumer
+
+hub = Hub()
+
+class Chat(RoomConsumer):
+    hub = hub
+
+    async def identify(self, ctx):
+        return ctx.query_params.get("user")
+
+    async def rooms(self, ctx):
+        return [ctx.path_params["room"]]
+
+    async def on_message(self, data):
+        await self.broadcast({"from": self.peer.identity, "text": data})
+
+app.add_ws_route(path="/ws/{room}", handler=Chat.as_handler())
+```
