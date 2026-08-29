@@ -116,3 +116,17 @@ class Chat(RoomConsumer):
 
 app.add_ws_route(path="/ws/{room}", handler=Chat.as_handler())
 ```
+
+## Backlog
+
+Retention is per room and capped by payload bytes, evicting oldest first:
+
+```python
+from sillo.wire import Hub, MemoryBacklog, NullBacklog
+
+Hub(backlog=MemoryBacklog(capacity_bytes=4 * 1024 * 1024))
+Hub(backlog=NullBacklog())    # keep nothing — typing indicators, telemetry
+```
+
+`Backlog` is a `Protocol`, so a Redis or Postgres store satisfies it without
+importing anything from here.
