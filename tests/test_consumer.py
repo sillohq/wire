@@ -222,3 +222,40 @@ class TestHelpers:
 
         await Mover(hub)(Socket(incoming=["go"]))
         assert recorded == [True, False, ["extra", "lobby"], True, False, ["lobby"]]
+
+
+class TestEncodings:
+    @pytest.mark.parametrize(
+        ("encoding", "message"),
+        [
+            (Encoding.JSON, {"a": 1}),
+            (Encoding.TEXT, "plain"),
+            (Encoding.BYTES, b"raw"),
+        ],
+    )
+    async def test_each_encoding_picks_the_matching_iterator(self, encoding, message):
+        hub, seen = Hub(), []
+
+        class Typed(RoomConsumer):
+            pass
+
+        Typed.encoding = encoding
+
+        class Recording(Typed):
+            async def on_message(self, data):
+                seen.append(data)
+
+        await Recording(hub)(Socket(incoming=[message]))
+        assert seen == [message]
+
+    async def test_queue_settings_reach_the_peer(self):
+        hub, seen = Hub(), []
+
+        class Tuned(RoomConsumer):
+            capacity = 8
+
+            async def on_connect(self):
+                seen.append((self.peer.capacity, self.peer.overflow))
+
+        await Tuned(hub)(Socket())
+        assert seen[0][0] == 8
