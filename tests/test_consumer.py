@@ -143,3 +143,82 @@ class TestLifecycle:
         hub = Hub()
         await RoomConsumer(hub)(Socket())
         assert hub.rooms() == []
+
+
+class TestHelpers:
+    async def test_broadcast_defaults_to_the_first_room(self):
+        hub = Hub()
+        listener_socket = Socket()
+
+        class Echo(RoomConsumer):
+            async def rooms(self, ctx):
+                return ["lobby"]
+
+            async def on_message(self, data):
+                await self.broadcast(data)
+
+        # A second peer already in the room to receive the echo.
+        from sillo.wire import Peer
+
+        listener = Peer(listener_socket)
+        await hub.join(listener, "lobby")
+
+        await Echo(hub)(Socket(incoming=["hello"]))
+        await drain(listener)
+        assert listener_socket.sent == ["hello"]
+
+    async def test_broadcast_with_no_rooms_delivers_nothing(self):
+        hub = Hub()
+        consumer = RoomConsumer(hub)
+        assert (await consumer.broadcast("x")).attempted == 0
+
+    async def test_broadcast_to_a_named_room(self):
+        hub = Hub()
+        from sillo.wire import Peer
+
+        target = Peer(Socket())
+        await hub.join(target, "other")
+
+        class Sender(RoomConsumer):
+            async def rooms(self, ctx):
+                return ["lobby"]
+
+            async def on_message(self, data):
+                await self.broadcast(data, room="other")
+
+        await Sender(hub)(Socket(incoming=["ping"]))
+        await drain(target)
+        assert target.socket.sent == ["ping"]
+
+    async def test_reply_goes_only_to_this_connection(self):
+        hub = Hub()
+
+        class Replier(RoomConsumer):
+            async def on_message(self, data):
+                await self.reply({"echo": data})
+
+        socket = Socket(incoming=["hi"])
+        await Replier(hub)(socket)
+        assert socket.sent == [{"echo": "hi"}]
+
+    async def test_reply_before_a_peer_exists_is_a_no_op(self):
+        await RoomConsumer(Hub()).reply("x")
+
+    async def test_joining_and_leaving_mid_connection(self):
+        hub = Hub()
+        recorded = []
+
+        class Mover(RoomConsumer):
+            async def rooms(self, ctx):
+                return ["lobby"]
+
+            async def on_message(self, data):
+                recorded.append(await self.join("extra"))
+                recorded.append(await self.join("extra"))
+                recorded.append(sorted(self.joined))
+                recorded.append(await self.leave("extra"))
+                recorded.append(await self.leave("never"))
+                recorded.append(sorted(self.joined))
+
+        await Mover(hub)(Socket(incoming=["go"]))
+        assert recorded == [True, False, ["extra", "lobby"], True, False, ["lobby"]]
