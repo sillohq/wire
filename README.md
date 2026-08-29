@@ -60,3 +60,15 @@ for nothing:
 ```python
 await hub.replay(peer, "lobby", since=last_seq_the_client_saw)
 ```
+
+## Slow consumers
+
+When a peer's queue fills, what happens is a choice, not a default:
+
+```python
+from sillo.wire import Overflow, Peer
+
+Peer(socket, overflow=Overflow.DROP_OLDEST)   # keep current — prices, cursors
+Peer(socket, overflow=Overflow.DROP_NEWEST)   # keep order — reconcile later
+Peer(socket, overflow=Overflow.CLOSE)         # disconnect and let it reconnect
+```
