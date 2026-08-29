@@ -153,3 +153,14 @@ async def test_a_broadcast_reaches_the_room():
 `FakeSocket(delay=…)` simulates a client that is slow to read, and
 `FakeSocket(fail=True)` one that has gone away — the two cases that are hardest
 to reproduce against a real server and the two most worth testing.
+
+## Reference
+
+| | |
+|---|---|
+| `Hub` | `join` `leave` `leave_all` `disconnect` `broadcast` `send_to` `replay` `history` `clear_history` `on_join` `on_leave` `rooms` `members` `identities` `count` `prune` `close` |
+| `Peer` | `offer` `send` `start` `close` `is_idle` `closed` `pending` `identity` |
+| `Envelope` | `payload` `room` `seq` `sent_at` `size()` |
+| `DeliveryReport` | `delivered` `dropped` `failed` `attempted` |
+| `Backlog` | `MemoryBacklog` `NullBacklog`, or your own |
+| `Overflow` | `DROP_OLDEST` `DROP_NEWEST` `CLOSE` |
