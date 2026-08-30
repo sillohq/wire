@@ -27,13 +27,28 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov ruff mypy
 
       - name: Lint
-        run: ruff check sillo_wire tests
+        run: ruff check sillo_wire tests _sillo_wire_bootstrap.py
 
       - name: Types
         run: mypy sillo_wire
 
       - name: Install the package
         run: pip install -e .
+
+      # The `.pth` only fires for a real install, so the alias is checked
+      # against a built wheel rather than the editable checkout.
+      - name: Check the sillo.wire alias against a real install
+        run: |
+          pip install build && python -m build --wheel -o /tmp/w .
+          python -m venv /tmp/v && /tmp/v/bin/pip install -q sillo-framework /tmp/w/*.whl mypy
+          /tmp/v/bin/python -c "
+          import sillo, sillo.wire, sillo_wire, os
+          assert sillo.wire is sillo_wire
+          assert 'wire' not in os.listdir(os.path.dirname(sillo.__file__)), 'wrote into sillo/'
+          print('alias ok, sillo/ untouched')
+          "
+          printf 'from sillo.wire import Hub\nh: Hub = Hub()\n' > /tmp/tc.py
+          /tmp/v/bin/python -m mypy /tmp/tc.py
 
       - name: Test
         run: pytest --cov --cov-report=term-missing
@@ -55,7 +70,7 @@ jobs:
           import zipfile, glob
           names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
           modules = [n for n in names if not n.startswith("sillo_wire-")]
-          assert all(n.startswith("sillo_wire/") for n in modules), modules
+          assert not any(n.startswith("sillo/") for n in names), "must not touch sillo/"
           assert not any(n.startswith("sillo/") for n in names), "must not touch sillo/"
           print("\n".join(modules))
           PY

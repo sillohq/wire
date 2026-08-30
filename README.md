@@ -6,11 +6,11 @@ Rooms, presence and fan-out for [Sillo](https://sillo.build) WebSockets.
 pip install sillo-wire
 ```
 
-Installs as `sillo-wire`, imports as `sillo_wire`.
+Installs as `sillo-wire`, imports as `sillo.wire`.
 
 ```python
 from sillo import SilloApp
-from sillo_wire import Hub, Peer
+from sillo.wire import Hub, Peer
 
 app = SilloApp()
 hub = Hub()
@@ -66,7 +66,7 @@ await hub.replay(peer, "lobby", since=last_seq_the_client_saw)
 When a peer's queue fills, what happens is a choice, not a default:
 
 ```python
-from sillo_wire import Overflow, Peer
+from sillo.wire import Overflow, Peer
 
 Peer(socket, overflow=Overflow.DROP_OLDEST)   # keep current — prices, cursors
 Peer(socket, overflow=Overflow.DROP_NEWEST)   # keep order — reconcile later
@@ -98,7 +98,7 @@ joins the rooms, pumps messages, and guarantees the peer is removed from every
 room when the connection ends — including when a hook raises.
 
 ```python
-from sillo_wire import Hub, RoomConsumer
+from sillo.wire import Hub, RoomConsumer
 
 hub = Hub()
 
@@ -122,7 +122,7 @@ app.add_ws_route(path="/ws/{room}", handler=Chat.as_handler())
 Retention is per room and capped by payload bytes, evicting oldest first:
 
 ```python
-from sillo_wire import Hub, MemoryBacklog, NullBacklog
+from sillo.wire import Hub, MemoryBacklog, NullBacklog
 
 Hub(backlog=MemoryBacklog(capacity_bytes=4 * 1024 * 1024))
 Hub(backlog=NullBacklog())    # keep nothing — typing indicators, telemetry
@@ -133,10 +133,10 @@ importing anything from here.
 
 ## Testing
 
-`sillo_wire.testing` ships the piece unit tests are missing — a socket:
+`sillo.wire.testing` ships the piece unit tests are missing — a socket:
 
 ```python
-from sillo_wire import Hub, Peer
+from sillo.wire import Hub, Peer
 from sillo_wire.testing import FakeSocket, drain
 
 async def test_a_broadcast_reaches_the_room():
@@ -165,12 +165,38 @@ to reproduce against a real server and the two most worth testing.
 | `Backlog` | `MemoryBacklog` `NullBacklog`, or your own |
 | `Overflow` | `DROP_OLDEST` `DROP_NEWEST` `CLOSE` |
 
+## The two import paths
+
+`sillo.wire` and `sillo_wire` name the same objects. The code lives in the
+top-level `sillo_wire` package; `sillo.wire` is an alias, so it reads as part
+of the framework:
+
+```python
+from sillo.wire import Hub     # both of these
+from sillo_wire import Hub     # bind the same class
+```
+
+The alias is a meta-path finder registered by a `.pth` at interpreter startup —
+the only hook that runs before an `import sillo.wire` could fail. Type checkers
+never run import hooks, so they are served separately by the partial stubs in
+`sillo-stubs/` (PEP 561), which are additive: mypy resolves `sillo.wire` and
+still uses the framework's own inline types for the rest of `sillo`.
+
+Nothing is written into the framework's package directory. Shipping
+`sillo/wire/` in there would be simpler, and it is what this did first — but
+two distributions sharing one directory goes wrong in both directions.
+Installing the framework from a checkout moves where `sillo` resolves and
+orphans the copy in site-packages; removing or replacing the framework leaves
+that directory standing with no `__init__.py`, which is an override rather than
+an addition. Uninstalling either package here leaves the other exactly as it
+was.
+
 ## Working on it
 
 ```bash
 pip install -e ".[dev]"
-pytest --cov            # 100% required
-ruff check sillo_wire tests
+pytest --cov            # 100% required, bootstrap included
+ruff check sillo_wire tests _sillo_wire_bootstrap.py
 mypy sillo_wire
 ```
 

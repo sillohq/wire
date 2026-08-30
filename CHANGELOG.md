@@ -21,7 +21,10 @@ three things the original could not do.
 - `RoomConsumer` — class-based endpoint with guaranteed cleanup.
 - `Hub.close` empties its rooms before awaiting anything and closes every peer
   concurrently, so shutdown is not paced by the slowest socket.
-- `sillo_wire.testing` — `FakeSocket` and `drain` for testing realtime code.
+- `sillo.wire.testing` — `FakeSocket` and `drain` for testing realtime code.
+- Importable as both `sillo.wire` and `sillo_wire`. The alias is a
+  meta-path finder registered by a `.pth`, with PEP 561 partial stubs for
+  type checkers; nothing is written into the framework's own package.
 
 ### Fixed, relative to the code this replaces
 
