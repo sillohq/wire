@@ -60,7 +60,12 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 
 [tool.coverage.run]
-source = ["sillo_wire", "_sillo_wire_bootstrap"]
+# `_sillo_wire_bootstrap` is deliberately not measured. Its `.pth` imports it
+# at interpreter startup, before coverage exists, so its `def` and `class`
+# statements never run under the tracer and it reads as 65% however thoroughly
+# it is tested. tests/test_alias.py covers it; the number would be an artefact
+# of import timing rather than of testing.
+source = ["sillo_wire"]
 branch = true
 
 [tool.coverage.report]
