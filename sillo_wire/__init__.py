@@ -1,9 +1,9 @@
 """Rooms, presence and fan-out for Sillo WebSockets.
 
-Install as ``sillo-wire``; import as ``sillo.wire``::
+Install as ``sillo-wire``; import as ``sillo_wire``::
 
     from sillo import SilloApp
-    from sillo.wire import Hub, Peer
+    from sillo_wire import Hub, Peer
 
     app = SilloApp()
     hub = Hub()
@@ -30,13 +30,13 @@ package exists:
   that reconnects asks for what it missed rather than for everything.
 """
 
-from sillo.wire.backlog import Backlog, MemoryBacklog, NullBacklog
-from sillo.wire.consumer import RoomConsumer
-from sillo.wire.envelope import DeliveryReport, Encoding, Envelope
-from sillo.wire.errors import PeerGone, RoomNotFound, WireError
-from sillo.wire.hub import Hub
-from sillo.wire.peer import Peer
-from sillo.wire.policy import Overflow
+from sillo_wire.backlog import Backlog, MemoryBacklog, NullBacklog
+from sillo_wire.consumer import RoomConsumer
+from sillo_wire.envelope import DeliveryReport, Encoding, Envelope
+from sillo_wire.errors import PeerGone, RoomNotFound, WireError
+from sillo_wire.hub import Hub
+from sillo_wire.peer import Peer
+from sillo_wire.policy import Overflow
 
 __version__ = "0.1.0"
 

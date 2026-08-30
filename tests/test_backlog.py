@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from sillo.wire import Envelope, MemoryBacklog, NullBacklog
+from sillo_wire import Envelope, MemoryBacklog, NullBacklog
 
 
 class TestMemoryBacklog:

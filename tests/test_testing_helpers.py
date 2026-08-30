@@ -6,8 +6,8 @@ import asyncio
 
 import pytest
 
-from sillo.wire import Envelope, Peer
-from sillo.wire.testing import FakeSocket, drain
+from sillo_wire import Envelope, Peer
+from sillo_wire.testing import FakeSocket, drain
 
 
 class TestFakeSocket:

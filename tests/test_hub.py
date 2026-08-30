@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from sillo.wire import (
+from sillo_wire import (
     Encoding,
     Envelope,
     Hub,
@@ -17,7 +17,7 @@ from sillo.wire import (
     Peer,
     RoomNotFound,
 )
-from sillo.wire.testing import FakeSocket, drain
+from sillo_wire.testing import FakeSocket, drain
 
 
 def make_peer(**kwargs) -> Peer:

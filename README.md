@@ -6,11 +6,11 @@ Rooms, presence and fan-out for [Sillo](https://sillo.build) WebSockets.
 pip install sillo-wire
 ```
 
-Installs as `sillo-wire`, imports as `sillo.wire`.
+Installs as `sillo-wire`, imports as `sillo_wire`.
 
 ```python
 from sillo import SilloApp
-from sillo.wire import Hub, Peer
+from sillo_wire import Hub, Peer
 
 app = SilloApp()
 hub = Hub()
@@ -66,7 +66,7 @@ await hub.replay(peer, "lobby", since=last_seq_the_client_saw)
 When a peer's queue fills, what happens is a choice, not a default:
 
 ```python
-from sillo.wire import Overflow, Peer
+from sillo_wire import Overflow, Peer
 
 Peer(socket, overflow=Overflow.DROP_OLDEST)   # keep current — prices, cursors
 Peer(socket, overflow=Overflow.DROP_NEWEST)   # keep order — reconcile later
@@ -98,7 +98,7 @@ joins the rooms, pumps messages, and guarantees the peer is removed from every
 room when the connection ends — including when a hook raises.
 
 ```python
-from sillo.wire import Hub, RoomConsumer
+from sillo_wire import Hub, RoomConsumer
 
 hub = Hub()
 
@@ -122,7 +122,7 @@ app.add_ws_route(path="/ws/{room}", handler=Chat.as_handler())
 Retention is per room and capped by payload bytes, evicting oldest first:
 
 ```python
-from sillo.wire import Hub, MemoryBacklog, NullBacklog
+from sillo_wire import Hub, MemoryBacklog, NullBacklog
 
 Hub(backlog=MemoryBacklog(capacity_bytes=4 * 1024 * 1024))
 Hub(backlog=NullBacklog())    # keep nothing — typing indicators, telemetry
@@ -133,11 +133,11 @@ importing anything from here.
 
 ## Testing
 
-`sillo.wire.testing` ships the piece unit tests are missing — a socket:
+`sillo_wire.testing` ships the piece unit tests are missing — a socket:
 
 ```python
-from sillo.wire import Hub, Peer
-from sillo.wire.testing import FakeSocket, drain
+from sillo_wire import Hub, Peer
+from sillo_wire.testing import FakeSocket, drain
 
 async def test_a_broadcast_reaches_the_room():
     hub, socket = Hub(), FakeSocket()
@@ -167,39 +167,11 @@ to reproduce against a real server and the two most worth testing.
 
 ## Working on it
 
-**`pip install -e .` does not work here, and cannot.** Editable installs put
-the checkout on `sys.path`; but `sillo` is a regular package, so Python finds
-its `__init__.py` in site-packages, stops, and never looks at a second `sillo/`
-directory further along the path. `sillo.__path__` stays one entry long and
-`sillo.wire` is not in it:
-
-```console
-$ pip install -e .
-$ python -c "import sillo.wire"
-ModuleNotFoundError: No module named 'sillo.wire'
-```
-
-That is the cost of importing as `sillo.wire` without an import hook — the
-wheel works by shipping *into* the installed package, and an editable install
-has no way to do that. Two things that do work:
-
 ```bash
-# Install for real. Correct, and needs a reinstall after each change.
-pip install .
-
-# Or link the checkout into the installed package, for a live edit loop.
-ln -s "$PWD/sillo/wire" \
-      "$(python -c 'import sillo, os; print(os.path.dirname(sillo.__file__))')/wire"
-```
-
-The test suite needs neither: `tests/conftest.py` appends this checkout to
-`sillo.__path__`, which is what the wheel does at install time.
-
-```bash
-pip install pytest pytest-asyncio pytest-cov ruff mypy
-pytest --cov          # 100% required
-ruff check sillo tests
-mypy sillo/wire
+pip install -e ".[dev]"
+pytest --cov            # 100% required
+ruff check sillo_wire tests
+mypy sillo_wire
 ```
 
 ## Requirements

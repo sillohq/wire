@@ -1,9 +1,9 @@
-"""Helpers for testing code that uses :mod:`sillo.wire`.
+"""Helpers for testing code that uses :mod:`sillo_wire`.
 
 Realtime code is awkward to test because the interesting behaviour is what a
 *socket* received, and a socket is the one thing a unit test does not have.
 :class:`FakeSocket` is that missing piece: it satisfies everything
-:class:`~sillo.wire.peer.Peer` calls and records what it was given.
+:class:`~sillo_wire.peer.Peer` calls and records what it was given.
 
 Nothing here is imported by the package itself, so it costs an application
 nothing at run time.
@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import typing
 
-from sillo.wire.peer import Peer
+from sillo_wire.peer import Peer
 
 __all__ = ["FakeSocket", "drain"]
 

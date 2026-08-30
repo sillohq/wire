@@ -7,7 +7,7 @@ state, and an application that serves several tenants can keep their traffic
 apart without a naming convention.
 
 Fan-out is concurrent and non-blocking. Delivering to a room enqueues on every
-peer at once and returns a :class:`~sillo.wire.envelope.DeliveryReport`; it
+peer at once and returns a :class:`~sillo_wire.envelope.DeliveryReport`; it
 never waits on a socket, so one client that has stopped reading cannot hold up
 the rest of the room.
 """
@@ -17,10 +17,10 @@ from __future__ import annotations
 import inspect
 import typing
 
-from sillo.wire.backlog import Backlog, MemoryBacklog
-from sillo.wire.envelope import DeliveryReport, Envelope
-from sillo.wire.errors import RoomNotFound
-from sillo.wire.peer import Peer
+from sillo_wire.backlog import Backlog, MemoryBacklog
+from sillo_wire.envelope import DeliveryReport, Envelope
+from sillo_wire.errors import RoomNotFound
+from sillo_wire.peer import Peer
 
 __all__ = ["Hub"]
 
@@ -33,7 +33,7 @@ class Hub:
 
     Args:
         backlog: Where delivered envelopes are retained for replay. Defaults to
-            an in-memory one; pass :class:`~sillo.wire.backlog.NullBacklog` to
+            an in-memory one; pass :class:`~sillo_wire.backlog.NullBacklog` to
             keep nothing.
     """
 

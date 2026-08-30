@@ -1,7 +1,7 @@
 """A class-based endpoint with the room plumbing already wired.
 
-:class:`RoomConsumer` is the ergonomic layer over :class:`~sillo.wire.hub.Hub`
-and :class:`~sillo.wire.peer.Peer`: it accepts the socket, builds the peer,
+:class:`RoomConsumer` is the ergonomic layer over :class:`~sillo_wire.hub.Hub`
+and :class:`~sillo_wire.peer.Peer`: it accepts the socket, builds the peer,
 joins the rooms, pumps messages into :meth:`~RoomConsumer.on_message`, and
 guarantees the peer is removed from every room when the connection ends —
 including when the handler raises.
@@ -22,10 +22,10 @@ from __future__ import annotations
 
 import typing
 
-from sillo.wire.envelope import DeliveryReport, Encoding
-from sillo.wire.hub import Hub
-from sillo.wire.peer import Peer
-from sillo.wire.policy import Overflow
+from sillo_wire.envelope import DeliveryReport, Encoding
+from sillo_wire.hub import Hub
+from sillo_wire.peer import Peer
+from sillo_wire.policy import Overflow
 
 __all__ = ["RoomConsumer"]
 

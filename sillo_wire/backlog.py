@@ -17,7 +17,7 @@ from __future__ import annotations
 import typing
 from collections import deque
 
-from sillo.wire.envelope import Envelope
+from sillo_wire.envelope import Envelope
 
 __all__ = ["Backlog", "MemoryBacklog", "NullBacklog"]
 

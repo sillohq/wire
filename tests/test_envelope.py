@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sillo.wire import DeliveryReport, Encoding, Envelope
+from sillo_wire import DeliveryReport, Encoding, Envelope
 
 
 class TestEnvelope:

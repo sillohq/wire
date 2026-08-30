@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from sillo.wire import Encoding, Hub, RoomConsumer
-from sillo.wire.testing import FakeSocket, drain
+from sillo_wire import Encoding, Hub, RoomConsumer
+from sillo_wire.testing import FakeSocket, drain
 
 
 class Socket(FakeSocket):
@@ -158,7 +158,7 @@ class TestHelpers:
                 await self.broadcast(data)
 
         # A second peer already in the room to receive the echo.
-        from sillo.wire import Peer
+        from sillo_wire import Peer
 
         listener = Peer(listener_socket)
         await hub.join(listener, "lobby")
@@ -174,7 +174,7 @@ class TestHelpers:
 
     async def test_broadcast_to_a_named_room(self):
         hub = Hub()
-        from sillo.wire import Peer
+        from sillo_wire import Peer
 
         target = Peer(Socket())
         await hub.join(target, "other")

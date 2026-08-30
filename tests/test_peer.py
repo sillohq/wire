@@ -12,8 +12,8 @@ import time
 
 import pytest
 
-from sillo.wire import Encoding, Envelope, Overflow, Peer, PeerGone
-from sillo.wire.testing import FakeSocket, drain
+from sillo_wire import Encoding, Envelope, Overflow, Peer, PeerGone
+from sillo_wire.testing import FakeSocket, drain
 
 
 class TestConstruction:

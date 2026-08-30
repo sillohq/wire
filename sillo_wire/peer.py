@@ -7,7 +7,7 @@ behind it waits. Here a broadcast only ever *enqueues*, which cannot block, and
 a writer task per peer drains the queue at whatever rate that peer manages.
 
 What happens when a queue fills is a policy rather than a default -- see
-:class:`~sillo.wire.policy.Overflow`.
+:class:`~sillo_wire.policy.Overflow`.
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ import time
 import typing
 import uuid
 
-from sillo.wire.envelope import Encoding, Envelope
-from sillo.wire.errors import PeerGone
-from sillo.wire.policy import Overflow
+from sillo_wire.envelope import Encoding, Envelope
+from sillo_wire.errors import PeerGone
+from sillo_wire.policy import Overflow
 
 __all__ = ["Peer"]
 
@@ -40,7 +40,7 @@ class Peer:
         encoding: How payloads are written.
         identity: Who this connection belongs to, if anyone. Two peers may
             share an identity — the same user with two tabs open — which is
-            what :meth:`~sillo.wire.hub.Hub.send_to` relies on.
+            what :meth:`~sillo_wire.hub.Hub.send_to` relies on.
         capacity: Outbound queue depth.
         overflow: What to do when the queue is full.
         idle_timeout: Seconds of silence after which the peer is considered
