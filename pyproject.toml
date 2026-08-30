@@ -48,6 +48,12 @@ packages = ["sillo_wire", "sillo-stubs"]
 "_sillo_wire_bootstrap.py" = "_sillo_wire_bootstrap.py"
 "sillo_wire.pth" = "sillo_wire.pth"
 
+# The same two files for `pip install -e .`, so the `sillo.wire` alias works in
+# a development checkout and not only from a built wheel.
+[tool.hatch.build.targets.editable.force-include]
+"_sillo_wire_bootstrap.py" = "_sillo_wire_bootstrap.py"
+"sillo_wire.pth" = "sillo_wire.pth"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

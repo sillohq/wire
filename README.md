@@ -193,6 +193,9 @@ was.
 
 ## Working on it
 
+The alias works under an editable install too — the `.pth` is shipped by the
+editable build target as well as the wheel.
+
 ```bash
 pip install -e ".[dev]"
 pytest --cov            # 100% required, bootstrap included
