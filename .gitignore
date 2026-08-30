@@ -11,3 +11,5 @@ htmlcov/
 .ruff_cache/
 .mypy_cache/
 .DS_Store
+
+.venv*/

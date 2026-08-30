@@ -14,6 +14,7 @@ the rest of the room.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import typing
 
@@ -298,10 +299,17 @@ class Hub:
         return removed
 
     async def close(self) -> None:
-        """Close every peer and drop every room."""
-        for peer in {p for members in self._rooms.values() for p in members}:
-            await peer.close()
+        """Close every peer and drop every room.
+
+        The rooms go first, before anything is awaited, so a broadcast racing
+        the shutdown finds an empty hub rather than a room whose peers are
+        half-closed.
+        """
+        peers = {p for members in self._rooms.values() for p in members}
         self._rooms.clear()
+        # Concurrently, for the same reason a broadcast is: closing a thousand
+        # sockets one after another makes shutdown as slow as the slowest one.
+        await asyncio.gather(*(peer.close() for peer in peers))
 
     def __repr__(self) -> str:
         return f"<Hub rooms={len(self._rooms)} peers={self.count()}>"

@@ -19,6 +19,8 @@ three things the original could not do.
 - `Hub.send_to` — reach every connection an identity has open.
 - Presence: `on_join` / `on_leave` listeners, and `identities()` as a roster.
 - `RoomConsumer` — class-based endpoint with guaranteed cleanup.
+- `Hub.close` empties its rooms before awaiting anything and closes every peer
+  concurrently, so shutdown is not paced by the slowest socket.
 - `sillo_wire.testing` — `FakeSocket` and `drain` for testing realtime code.
 
 ### Fixed, relative to the code this replaces
