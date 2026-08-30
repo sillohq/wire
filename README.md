@@ -165,6 +165,43 @@ to reproduce against a real server and the two most worth testing.
 | `Backlog` | `MemoryBacklog` `NullBacklog`, or your own |
 | `Overflow` | `DROP_OLDEST` `DROP_NEWEST` `CLOSE` |
 
+## Working on it
+
+**`pip install -e .` does not work here, and cannot.** Editable installs put
+the checkout on `sys.path`; but `sillo` is a regular package, so Python finds
+its `__init__.py` in site-packages, stops, and never looks at a second `sillo/`
+directory further along the path. `sillo.__path__` stays one entry long and
+`sillo.wire` is not in it:
+
+```console
+$ pip install -e .
+$ python -c "import sillo.wire"
+ModuleNotFoundError: No module named 'sillo.wire'
+```
+
+That is the cost of importing as `sillo.wire` without an import hook — the
+wheel works by shipping *into* the installed package, and an editable install
+has no way to do that. Two things that do work:
+
+```bash
+# Install for real. Correct, and needs a reinstall after each change.
+pip install .
+
+# Or link the checkout into the installed package, for a live edit loop.
+ln -s "$PWD/sillo/wire" \
+      "$(python -c 'import sillo, os; print(os.path.dirname(sillo.__file__))')/wire"
+```
+
+The test suite needs neither: `tests/conftest.py` appends this checkout to
+`sillo.__path__`, which is what the wheel does at install time.
+
+```bash
+pip install pytest pytest-asyncio pytest-cov ruff mypy
+pytest --cov          # 100% required
+ruff check sillo tests
+mypy sillo/wire
+```
+
 ## Requirements
 
 Python 3.10+, `sillo-framework` 0.3 or newer. No other dependencies.
