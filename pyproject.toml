@@ -31,7 +31,7 @@ dependencies = ["sillo-framework>=0.3"]
 
 [project.urls]
 Homepage = "https://sillo.build"
-Documentation = "https://docs.sillo.build/v1.0/packages/wire/"
+Documentation = "https://docs.sillo.build/packages/wire/"
 Source = "https://github.com/sillohq/wire"
 
 [project.optional-dependencies]
