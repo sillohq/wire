@@ -1,0 +1,103 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'sillo-wire-v*'  # sillo-wire releases: sillo-wire-v0.1.0
+
+jobs:
+  release:
+    name: Build and Publish to PyPI
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read        # actions/checkout needs repo read access
+      id-token: write       # for OIDC (trusted publishing)
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#sillo-wire-v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Releasing sillo-wire v$VERSION"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      # PyPI takes the version from the package, not the tag. Without this a
+      # tag of sillo-wire-v0.1.1 against a pyproject still saying 0.1.0
+      # publishes 0.1.0 and reports success, and the version it claims to have
+      # released is one that does not exist.
+      #
+      # `sillo_wire.__version__` is checked too because it is what a user reads
+      # at runtime.
+      - name: The tag, the package and __version__ must agree
+        run: |
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          PKG_VERSION=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          MOD_VERSION=$(python -c "import re,pathlib; print(re.search(r'__version__.*?\"(.*?)\"', pathlib.Path('sillo_wire/__init__.py').read_text()).group(1))")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag says $TAG_VERSION, pyproject.toml says $PKG_VERSION."
+            exit 1
+          fi
+          if [ "$TAG_VERSION" != "$MOD_VERSION" ]; then
+            echo "::error::Tag says $TAG_VERSION, sillo_wire/__init__.py says $MOD_VERSION."
+            exit 1
+          fi
+          echo "all three say $PKG_VERSION"
+
+      - name: Clean Old Builds
+        run: |
+          rm -rf dist build *.egg-info
+
+      - name: Setup Virtual Environment
+        run: uv venv
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]"
+
+      - name: Run tests
+        run: uv run pytest -q --tb=short
+
+      - name: Build the package
+        run: uv build
+
+      # The whole point of this package's layout: the wheel adds a top-level
+      # `sillo_wire` plus the `.pth`/bootstrap at the site-packages root, and
+      # it must never write into the framework's own `sillo/` directory.
+      - name: The wheel must stay out of sillo/
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          assert not any(n.startswith("sillo/") for n in names), "wheel writes into sillo/"
+          print("wheel does not touch sillo/")
+          PY
+
+      # Prefers OIDC trusted publishing (the id-token permission above); falls
+      # back to an API token when the PYPI_TOKEN secret is set. Passing an empty
+      # --token is a hard failure, so the secret must not be forwarded blindly.
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          if [ -n "$PYPI_TOKEN" ]; then
+            uv publish --token "$PYPI_TOKEN"
+          else
+            uv publish
+          fi
