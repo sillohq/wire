@@ -1,8 +1,11 @@
 # Changelog
 
-## 0.1.0
+## 0.1.0.dev1
 
-First release. Extracted from `sillo.websockets.channels` and rebuilt around
+Development pre-release for testing. Install with
+`pip install --pre sillo-wire==0.1.0.dev1`.
+
+First cut. Extracted from `sillo.websockets.channels` and rebuilt around
 three things the original could not do.
 
 ### Added
