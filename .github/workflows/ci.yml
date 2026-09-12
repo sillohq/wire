@@ -27,7 +27,7 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov ruff mypy
 
       - name: Lint
-        run: ruff check sillo_wire tests _sillo_wire_bootstrap.py
+        run: ruff check sillo_wire tests
 
       - name: Types
         run: mypy sillo_wire
@@ -35,19 +35,28 @@ jobs:
       - name: Install the package
         run: pip install -e .
 
-      # The `.pth` only fires for a real install, so the alias is checked
-      # against a built wheel rather than the editable checkout.
-      - name: Check the sillo.wire alias against a real install
+      # Checked against a built wheel rather than the editable checkout: an
+      # editable install can import a package the wheel does not actually ship.
+      - name: Check a built wheel installs and imports
         run: |
           pip install build && python -m build --wheel -o /tmp/w .
           python -m venv /tmp/v && /tmp/v/bin/pip install -q sillo-framework /tmp/w/*.whl mypy
           /tmp/v/bin/python -c "
-          import sillo, sillo.wire, sillo_wire, os
-          assert sillo.wire is sillo_wire
+          import os, sillo, sillo_wire
+          from sillo_wire import Hub
+          # The package is top-level and adds nothing to the framework's own
+          # directory; it used to ship a .pth that aliased sillo.wire onto it.
           assert 'wire' not in os.listdir(os.path.dirname(sillo.__file__)), 'wrote into sillo/'
-          print('alias ok, sillo/ untouched')
+          try:
+              import sillo.wire
+          except ImportError:
+              pass
+          else:
+              raise AssertionError('sillo.wire still resolves; the alias was removed')
+          print('sillo_wire imports, sillo/ untouched, no alias')
           "
-          printf 'from sillo.wire import Hub\nh: Hub = Hub()\n' > /tmp/tc.py
+          # Types come from the package's own inline annotations now, not stubs.
+          printf 'from sillo_wire import Hub\nh: Hub = Hub()\n' > /tmp/tc.py
           /tmp/v/bin/python -m mypy /tmp/tc.py
 
       - name: Test

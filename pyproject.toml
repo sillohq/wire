@@ -39,21 +39,7 @@ Source = "https://github.com/sillohq/wire"
 dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "pytest-cov>=5.0", "ruff>=0.6", "mypy>=1.11"]
 
 [tool.hatch.build.targets.wheel]
-# `sillo-stubs` serves type checkers, which never run the import hook below.
-packages = ["sillo_wire", "sillo-stubs"]
-
-# The bootstrap and its .pth land at the site-packages root. The .pth is what
-# runs at interpreter startup and registers the `sillo.wire` alias; see
-# _sillo_wire_bootstrap.py for why the package is not shipped into `sillo/`.
-[tool.hatch.build.targets.wheel.force-include]
-"_sillo_wire_bootstrap.py" = "_sillo_wire_bootstrap.py"
-"sillo_wire.pth" = "sillo_wire.pth"
-
-# The same two files for `pip install -e .`, so the `sillo.wire` alias works in
-# a development checkout and not only from a built wheel.
-[tool.hatch.build.targets.editable.force-include]
-"_sillo_wire_bootstrap.py" = "_sillo_wire_bootstrap.py"
-"sillo_wire.pth" = "sillo_wire.pth"
+packages = ["sillo_wire"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -61,11 +47,6 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 
 [tool.coverage.run]
-# `_sillo_wire_bootstrap` is deliberately not measured. Its `.pth` imports it
-# at interpreter startup, before coverage exists, so its `def` and `class`
-# statements never run under the tracer and it reads as 65% however thoroughly
-# it is tested. tests/test_alias.py covers it; the number would be an artefact
-# of import timing rather than of testing.
 source = ["sillo_wire"]
 branch = true
 

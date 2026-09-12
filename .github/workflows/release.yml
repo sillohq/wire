@@ -77,9 +77,10 @@ jobs:
       - name: Build the package
         run: uv build
 
-      # The whole point of this package's layout: the wheel adds a top-level
-      # `sillo_wire` plus the `.pth`/bootstrap at the site-packages root, and
-      # it must never write into the framework's own `sillo/` directory.
+      # The wheel adds a top-level `sillo_wire` and nothing else; it must never
+      # write into the framework's own `sillo/` directory. Two distributions
+      # sharing one package directory goes wrong in both directions, which is
+      # why this is asserted rather than assumed.
       - name: The wheel must stay out of sillo/
         run: |
           python - <<'PY'
