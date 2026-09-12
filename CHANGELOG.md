@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Removed
+
+- **The `sillo.wire` import alias.** `sillo_wire` is now the only import path:
+
+  ```python
+  from sillo_wire import Hub, Peer     # was: from sillo.wire import ...
+  ```
+
+  The alias was a meta-path finder registered by a `.pth` at interpreter
+  startup, plus PEP 561 stubs under `sillo-stubs/` to serve type checkers,
+  which never run import hooks. It read as part of the framework, but it cost a
+  `.pth` executing on every interpreter start in every environment the package
+  was installed in, a second set of stubs to keep in step with the real
+  package, and a name that static analysis only resolved because a second set
+  of files said so. A plain top-level package needs none of that.
+
+  `_sillo_wire_bootstrap.py`, `sillo_wire.pth` and `sillo-stubs/` are gone, and
+  so are the `force-include` blocks that shipped them. Inline types in
+  `sillo_wire` are now the single source of truth for type checkers.
+
 ## 0.1.0.dev1
 
 Development pre-release for testing. Install with
