@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sillo-wire"
-version = "0.1.0.dev1"
+version = "1.0.0a1"
 description = "Rooms, presence and fan-out for Sillo WebSockets — bounded queues, replayable backlog, no global state."
 readme = "README.md"
 requires-python = ">=3.10"

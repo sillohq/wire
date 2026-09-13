@@ -38,7 +38,7 @@ from sillo_wire.hub import Hub
 from sillo_wire.peer import Peer
 from sillo_wire.policy import Overflow
 
-__version__ = "0.1.0.dev1"
+__version__ = "1.0.0a1"
 
 __all__ = [
     "Backlog",
