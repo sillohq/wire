@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sillo-wire"
-version = "1.0.0a1"
+version = "1.0.0a2"
 description = "Rooms, presence and fan-out for Sillo WebSockets — bounded queues, replayable backlog, no global state."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -28,7 +28,7 @@ classifiers = [
 ]
 # Only the socket surface is used — WebSocketContext and the logger. No ORM,
 # no cache, no extras.
-dependencies = ["sillo-framework>=0.3"]
+dependencies = ["sillo-framework>=1.0.0a1"]
 
 [project.urls]
 Homepage = "https://sillo.build"
