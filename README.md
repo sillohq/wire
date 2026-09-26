@@ -179,7 +179,7 @@ mypy sillo_wire
 
 ## Requirements
 
-Python 3.10+, `sillo-framework` 0.3 or newer. No other dependencies.
+Python 3.10+, `sillo-framework` 1.0 or newer. No other dependencies.
 
 ## Licence
 
